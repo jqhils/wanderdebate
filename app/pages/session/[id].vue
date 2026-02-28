@@ -13,16 +13,12 @@ const { startDebate, continueDebate } = useOrchestrator()
 const { loadSession, subscribeToRealtime, unsubscribeFromRealtime, sendUserMessage, loading, error } = useSession()
 const toast = useToast()
 
-// Mobile tab state — defaults to Itinerary per CLAUDE.md
-const activeTab = ref<'itinerary' | 'chat'>('itinerary')
+const activeTab = ref<'itinerary' | 'chat' | 'map'>('itinerary')
 
 const sessionId = computed(() => route.params.id as string)
 
-// Load session data and subscribe to Realtime on mount
 onMounted(async () => {
   store.reset()
-
-  // Load existing session data from Supabase
   await loadSession(sessionId.value)
 
   if (error.value) {
@@ -34,10 +30,8 @@ onMounted(async () => {
     return
   }
 
-  // Subscribe to Realtime updates
   subscribeToRealtime(sessionId.value)
 
-  // Start the debate if the session was just created (no versions yet)
   if (store.versions.length === 0 && store.session?.status === 'debating') {
     startDebate()
   }
@@ -139,6 +133,18 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
           <UIcon name="i-lucide-map" class="size-4 inline mr-1" />
           Itinerary
         </button>
+        <button
+          :class="[
+            'flex-1 py-2.5 text-sm font-medium text-center transition-colors',
+            activeTab === 'map'
+              ? 'text-amber-600 border-b-2 border-amber-500'
+              : 'text-gray-500 hover:text-gray-700',
+          ]"
+          @click="activeTab = 'map'"
+        >
+          <UIcon name="i-lucide-map-pin" class="size-4 inline mr-1" />
+          Map
+        </button>
       </div>
 
       <!-- Main content -->
@@ -146,7 +152,7 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
         <!-- Chat panel -->
         <div
           :class="[
-            'lg:w-1/2 lg:border-r lg:border-gray-200 lg:dark:border-gray-700',
+            'lg:w-1/3 lg:border-r lg:border-gray-200 lg:dark:border-gray-700',
             activeTab === 'chat' ? 'flex-1 lg:flex-none' : 'hidden lg:block',
           ]"
         >
@@ -161,7 +167,7 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
         <!-- Itinerary panel -->
         <div
           :class="[
-            'lg:w-1/2',
+            'lg:w-1/3 lg:border-r lg:border-gray-200 lg:dark:border-gray-700',
             activeTab === 'itinerary' ? 'flex-1 lg:flex-none' : 'hidden lg:block',
           ]"
         >
@@ -169,6 +175,19 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
             :versions="store.versions"
             :current-index="store.currentVersionIndex"
             @update:current-index="store.setCurrentVersion($event)"
+          />
+        </div>
+
+        <!-- Map panel -->
+        <div
+          :class="[
+            'lg:w-1/3',
+            activeTab === 'map' ? 'flex-1 lg:flex-none' : 'hidden lg:block',
+          ]"
+        >
+          <ItineraryMap
+            :versions="store.versions"
+            :current-index="store.currentVersionIndex"
           />
         </div>
       </div>
