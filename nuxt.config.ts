@@ -23,6 +23,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     mistralApiKey: '', // Server-only (from NUXT_MISTRAL_API_KEY)
+    googlePlacesApiKey: '', // Server-only (from GOOGLE_PLACES_API_KEY)
     public: {
       supabaseUrl: '',
       supabaseKey: '',
