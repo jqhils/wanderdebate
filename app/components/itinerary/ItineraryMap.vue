@@ -28,7 +28,7 @@ function getPhotoUrl(activity: any): string | null {
   if (!photoRef || !photoRef.startsWith('places/')) return null
   const config = useRuntimeConfig()
   const key = config.public?.googlePlacesApiKey || ''
-  return `https://places.googleapis.com/v1/${photoRef}/media?maxHeightPx=200&key=${key}`
+  return `https://places.googleapis.com/v1/${photoRef}/media?maxHeightPx=1200&key=${key}`
 }
 
 async function initMap() {

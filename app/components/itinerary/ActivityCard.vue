@@ -21,7 +21,7 @@ function photoUrl(): string | null {
   if (!ref || !ref.startsWith('places/')) return null
   const config = useRuntimeConfig()
   const key = config.public?.googlePlacesApiKey || ''
-  return `https://places.googleapis.com/v1/${ref}/media?maxHeightPx=400&key=${key}`
+  return `https://places.googleapis.com/v1/${ref}/media?maxHeightPx=1200&key=${key}`
 }
 
 function statusDot() {

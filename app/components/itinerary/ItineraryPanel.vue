@@ -14,17 +14,7 @@ const emit = defineEmits<{
 const currentVersion = computed(() => props.versions[props.currentIndex] ?? null)
 const showCommentary = ref(false)
 
-// Swipe handling
-const touchStartX = ref(0)
-const touchEndX = ref(0)
-const swiping = ref(false)
-const swipeOffset = ref(0)
 
-function onTouchStart(e: TouchEvent) {
-  touchStartX.value = e.touches[0].clientX
-  swiping.value = true
-  swipeOffset.value = 0
-}
 
 function onTouchMove(e: TouchEvent) {
   if (!swiping.value) return
@@ -45,23 +35,20 @@ function onTouchEnd() {
   swipeOffset.value = 0
 }
 
-// Mouse swipe for desktop
-const mouseStartX = ref(0)
-const mouseDown = ref(false)
 
-function onMouseDown(e: MouseEvent) {
-  mouseStartX.value = e.clientX
-  mouseDown.value = true
-  swipeOffset.value = 0
-}
 
 function onMouseMove(e: MouseEvent) {
   if (!mouseDown.value) return
-  swipeOffset.value = e.clientX - mouseStartX.value
+  const diff = e.clientX - mouseStartX.value
+  // Only start swiping after 10px horizontal movement
+  if (Math.abs(diff) > 10) {
+    swipeOffset.value = diff
+  }
 }
 
-function onMouseUp() {
+function onMouseUp(e: MouseEvent) {
   if (!mouseDown.value) return
+  const wasSwiping = Math.abs(swipeOffset.value) > 10
   mouseDown.value = false
   const threshold = 80
 
@@ -72,6 +59,11 @@ function onMouseUp() {
   }
 
   swipeOffset.value = 0
+  // If we were swiping, prevent the click from firing
+  if (wasSwiping) {
+    e.preventDefault()
+    e.stopPropagation()
+  }
 }
 </script>
 
@@ -79,7 +71,7 @@ function onMouseUp() {
   <div class="flex flex-col h-full">
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700 shrink-0">
       <h2 class="text-lg font-semibold text-white">Itinerary</h2>
-      <span v-if="versions.length > 0" class="text-[10px] text-gray-500">← swipe →</span>
+      
     </div>
 
     <div v-if="versions.length === 0" class="flex-1 flex items-center justify-center p-8">
@@ -98,15 +90,15 @@ function onMouseUp() {
 
       <div
         v-if="currentVersion"
-        class="flex-1 overflow-y-auto p-4 space-y-4 select-none"
-        :style="{ transform: `translateX(${Math.max(-60, Math.min(60, swipeOffset))}px)`, transition: swiping || mouseDown ? 'none' : 'transform 0.2s ease-out' }"
-        @touchstart="onTouchStart"
-        @touchmove="onTouchMove"
-        @touchend="onTouchEnd"
-        @mousedown="onMouseDown"
-        @mousemove="onMouseMove"
-        @mouseup="onMouseUp"
-        @mouseleave="onMouseUp"
+        class="flex-1 overflow-y-auto p-4 space-y-4"
+        
+        
+        
+        
+        
+        
+        
+        
       >
         <!-- Collapsed agent reasoning -->
         <button
@@ -140,13 +132,19 @@ function onMouseUp() {
           </div>
         </details>
 
-        <!-- Swipe hint at bottom -->
-        <div class="text-center py-4">
-          <p class="text-[10px] text-gray-600">
-            <span v-if="currentIndex > 0">← v{{ versions[currentIndex - 1].versionNumber }}</span>
-            <span v-if="currentIndex > 0 && currentIndex < versions.length - 1"> · </span>
-            <span v-if="currentIndex < versions.length - 1">v{{ versions[currentIndex + 1].versionNumber }} →</span>
-          </p>
+        <!-- Version navigation -->
+        <div class="flex items-center justify-center gap-4 py-4 border-t border-gray-700 mt-4">
+          <button
+            :disabled="currentIndex <= 0"
+            class="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            @click.stop="emit('update:currentIndex', currentIndex - 1)"
+          >‹</button>
+          <span class="text-xs text-gray-500">Version {{ currentIndex + 1 }} of {{ versions.length }}</span>
+          <button
+            :disabled="currentIndex >= versions.length - 1"
+            class="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            @click.stop="emit('update:currentIndex', currentIndex + 1)"
+          >›</button>
         </div>
       </div>
     </template>

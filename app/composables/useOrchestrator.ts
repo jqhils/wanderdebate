@@ -104,6 +104,17 @@ export function useOrchestrator() {
       const success = await executeTurn(i)
       if (!success) break
 
+      // Brief pause between turns to avoid Mistral rate limits
+      await new Promise(r => setTimeout(r, 2000))
+
+      // Fire grounding in background (don't block debate)
+      if (store.session?.id) {
+        $fetch('/api/debate/ground', {
+          method: 'POST',
+          body: { sessionId: store.session.id, versionNumber: i },
+        }).catch(err => console.warn('[Grounding] Background grounding failed:', err))
+      }
+
       currentTurnIndex.value = i + 1
     }
 

@@ -41,8 +41,7 @@ const chips = ['More local food', 'Less walking', 'Add photo ops', 'Skip bars', 
       </div>
     </div>
     <div class="hidden lg:block lg:w-1/2">
-      <ItineraryPanel :versions="store.versions" :current-index="store.currentVersionIndex"
-        @update:current-index="store.setCurrentVersion($event)" />
+      <ItineraryPanel :versions="store.versions" :current-index="store.currentVersionIndex" @update:current-index="store.currentVersionIndex = $event" />
     </div>
   </div>
 </template>

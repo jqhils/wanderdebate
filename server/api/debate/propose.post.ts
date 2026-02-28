@@ -33,6 +33,8 @@ export default defineEventHandler(async (event) => {
   const durationHours = Number(sessionRow.duration_hours)
   const numDays = Math.max(1, Math.ceil(durationHours / 24))
 
+  console.log('[Propose] Starting for', body.agentId, 'version', body.versionNumber)
+
   const llmResponse = await callAgentWithRetry(
     getSystemPrompt(body.agentId, 'propose'),
     buildProposePrompt(

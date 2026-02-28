@@ -5,7 +5,7 @@ import { AgentId, type DayPlan } from '../../app/utils/schemas'
 
 const MODEL = 'mistral-small-latest'
 const MAX_TOKENS = 8192
-const MAX_RETRIES = 2
+const MAX_RETRIES = 3
 
 let _client: Mistral | null = null
 
@@ -114,14 +114,17 @@ export async function callAgentWithRetry<T>(
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const result = await client.chat.complete({
-        model: MODEL,
-        maxTokens: MAX_TOKENS,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      })
+      const result = await Promise.race([
+        client.chat.complete({
+          model: MODEL,
+          maxTokens: MAX_TOKENS,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Mistral timeout after 60s')), 60000)),
+      ]) as any
 
       const content = result.choices?.[0]?.message?.content
       if (typeof content !== 'string') {
