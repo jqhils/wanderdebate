@@ -28,7 +28,7 @@ function getPhotoUrl(activity: any): string | null {
   if (!photoRef || !photoRef.startsWith('places/')) return null
   const config = useRuntimeConfig()
   const key = config.public?.googlePlacesApiKey || ''
-  return `https://places.googleapis.com/v1/${photoRef}/media?maxHeightPx=1200&key=${key}`
+  return `https://places.googleapis.com/v1/${photoRef}/media?maxWidthPx=1600&key=${key}`
 }
 
 async function initMap() {
@@ -75,7 +75,7 @@ function renderMarkers() {
 
   const allPoints: [number, number][] = []
   let activityIndex = 0
-  const dayColors = ['#f97316', '#8b5cf6', '#06b6d4', '#ec4899'] // orange, purple, cyan, pink per day
+  const dayColors = ['rgba(148,210,189,0.5)', 'rgba(167,175,220,0.5)', 'rgba(210,180,140,0.5)', 'rgba(200,160,190,0.5)'] // orange, purple, cyan, pink per day
 
   for (const day of version.days) {
     const dayColor = dayColors[(day.dayNumber - 1) % dayColors.length]

@@ -39,13 +39,52 @@ function photoUrl(activity: any): string | null {
   if (!ref || !ref.startsWith('places/')) return null
   const config = useRuntimeConfig()
   const key = config.public?.googlePlacesApiKey || ''
-  return `https://places.googleapis.com/v1/${ref}/media?maxHeightPx=300&key=${key}`
+  return `https://places.googleapis.com/v1/${ref}/media?maxWidthPx=1600&maxHeightPx=900&key=${key}`
 }
 
 function statusBadge(activity: any) {
   if (activity.groundingStatus === 'verified') return { text: 'Verified', color: 'text-green-400 bg-green-500/20' }
   if (activity.groundingStatus === 'replaced') return { text: 'Replaced', color: 'text-amber-400 bg-amber-500/20' }
   return { text: 'Unverified', color: 'text-gray-400 bg-gray-500/20' }
+}
+
+const nearestNeighborhood = computed(() => {
+  const dest = store.session?.destination ?? ''
+  const first = activities.value.find((a: any) => a.category !== 'transit')
+  if (!first) return dest
+  // Use activity location, extract the neighborhood name (not full address)
+  const loc = first.location || ''
+  // Try to get a clean neighborhood: skip numbered addresses, take the area name
+  const parts = loc.split(',').map((s: string) => s.trim())
+  const neighborhood = parts.find((p: string) => !/^\d/.test(p) && p.length > 2 && p.length < 30) || parts[0] || ''
+  if (!neighborhood || neighborhood === dest) return dest
+  return neighborhood + ', ' + dest
+})
+
+const stayQuery = computed(() => encodeURIComponent(nearestNeighborhood.value))
+
+const bookingLink = computed(() => 
+  `https://www.booking.com/searchresults.html?ss=${stayQuery.value}`
+)
+
+const airbnbLink = computed(() =>
+  `https://www.airbnb.com/s/${stayQuery.value}/homes`
+)
+
+const googleHotelLink = computed(() =>
+  `https://www.google.com/travel/hotels/${stayQuery.value}`
+)
+
+function needsTicket(activity: any): boolean {
+  const text = ((activity.description || '') + ' ' + (activity.agentLogic || '') + ' ' + (activity.title || '')).toLowerCase()
+  return /ticket|reserv|book|admission|entry fee|skip.the.line|advance|museum|gallery|observation|deck|tower|teamlab|skytree/i.test(text)
+}
+
+function ticketSearchUrl(activity: any): string {
+  // Use venue website from Google Places if available
+  if (activity.groundingData?.websiteUri) return activity.groundingData.websiteUri
+  // Otherwise deep link to Klook (major ticket aggregator)
+  return 'https://www.klook.com/search/result/?keyword=' + encodeURIComponent(activity.title)
 }
 </script>
 
@@ -87,8 +126,8 @@ function statusBadge(activity: any) {
 
           <div v-else class="ml-14 py-2">
             <div class="rounded-xl bg-gray-900 border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors">
-              <div v-if="photoUrl(activity)" class="h-40 overflow-hidden">
-                <img :src="photoUrl(activity)!" :alt="activity.title" class="w-full h-full object-cover" loading="lazy"
+              <div v-if="photoUrl(activity)" class="aspect-[16/9] overflow-hidden">
+                <img :src="photoUrl(activity)!" :alt="activity.title" class="w-full h-full object-cover object-center" loading="lazy"
                   @error="($event.target as HTMLImageElement).parentElement!.style.display = 'none'" />
               </div>
               <div class="p-4">
@@ -111,6 +150,9 @@ function statusBadge(activity: any) {
                   <a :href="mapsLink(activity)" target="_blank" class="px-3 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors inline-flex items-center gap-1">
                     <UIcon name="i-lucide-map-pin" class="size-3" /> Open in Maps
                   </a>
+                  <a v-if="needsTicket(activity)" :href="ticketSearchUrl(activity)" target="_blank" class="px-3 py-1.5 text-xs rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors inline-flex items-center gap-1">
+                    🎟️ Find tickets
+                  </a>
                 </div>
               </div>
             </div>
@@ -122,16 +164,20 @@ function statusBadge(activity: any) {
       </div>
 
       <div class="mt-8 p-5 rounded-xl bg-gray-900 border border-gray-800">
-        <h3 class="text-sm font-semibold text-white mb-2">🏨 Accommodation</h3>
-        <p class="text-xs text-gray-500 mb-3">Based on your itinerary, we recommend staying near <span class="text-amber-400">{{ store.session?.destination }}</span>.</p>
+        <h3 class="text-sm font-semibold text-white mb-2">🏨 Where to stay</h3>
+        <p class="text-xs text-gray-500 mb-3">Based on your itinerary, we recommend staying near <span class="text-amber-400">{{ nearestNeighborhood }}</span>.</p>
         <div class="flex gap-2">
-          <a :href="`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(store.session?.destination ?? '')}`" target="_blank"
+          <a :href="bookingLink" target="_blank"
             class="px-3 py-1.5 text-xs rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors inline-flex items-center gap-1">
             <UIcon name="i-lucide-bed" class="size-3" /> Booking.com
           </a>
-          <a :href="`https://www.airbnb.com/s/${encodeURIComponent(store.session?.destination ?? '')}/homes`" target="_blank"
+          <a :href="airbnbLink" target="_blank"
             class="px-3 py-1.5 text-xs rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors inline-flex items-center gap-1">
             <UIcon name="i-lucide-home" class="size-3" /> Airbnb
+          </a>
+          <a :href="googleHotelLink" target="_blank"
+            class="px-3 py-1.5 text-xs rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors inline-flex items-center gap-1">
+            <UIcon name="i-lucide-search" class="size-3" /> Google Hotels
           </a>
         </div>
       </div>

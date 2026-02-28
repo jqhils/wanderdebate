@@ -21,7 +21,7 @@ function photoUrl(): string | null {
   if (!ref || !ref.startsWith('places/')) return null
   const config = useRuntimeConfig()
   const key = config.public?.googlePlacesApiKey || ''
-  return `https://places.googleapis.com/v1/${ref}/media?maxHeightPx=1200&key=${key}`
+  return `https://places.googleapis.com/v1/${ref}/media?maxWidthPx=1600&maxHeightPx=900&key=${key}`
 }
 
 function statusDot() {
@@ -29,6 +29,24 @@ function statusDot() {
   if (props.activity.groundingStatus === 'replaced') return 'bg-amber-500'
   return 'bg-gray-500'
 }
+
+function needsTicket(activity: any): boolean {
+  const text = ((activity.description || '') + ' ' + (activity.agentLogic || '') + ' ' + (activity.title || '')).toLowerCase()
+  return /ticket|reserv|book|admission|entry fee|skip.the.line|advance|museum|gallery|observation|deck|tower|teamlab|skytree/i.test(text)
+}
+
+function ticketSearchUrl(activity: any): string {
+  // Use venue website from Google Places if available
+  if (activity.groundingData?.websiteUri) return activity.groundingData.websiteUri
+  // Otherwise deep link to Klook (major ticket aggregator)
+  return 'https://www.klook.com/search/result/?keyword=' + encodeURIComponent(activity.title)
+}
+
+function mapsUrl(activity: any): string {
+  if (activity.groundingData?.placeId) return 'https://www.google.com/maps/place/?q=place_id:' + activity.groundingData.placeId
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(activity.title + ' ' + activity.location)
+}
+
 </script>
 
 <template>
@@ -54,11 +72,11 @@ function statusDot() {
       @click="expanded = !expanded"
     >
       <!-- Photo hero (if available) -->
-      <div v-if="photoUrl() && !expanded" class="relative h-28 overflow-hidden">
+      <div v-if="photoUrl() && !expanded" class="relative aspect-[16/9] overflow-hidden">
         <img
           :src="photoUrl()!"
           :alt="activity.title"
-          class="w-full h-full object-cover"
+          class="w-full h-full object-cover object-center"
           loading="lazy"
           @error="($event.target as HTMLImageElement).parentElement!.style.display = 'none'"
         />
@@ -91,11 +109,11 @@ function statusDot() {
       <!-- Expanded view -->
       <div v-if="expanded" class="p-0">
         <!-- Large photo when expanded -->
-        <div v-if="photoUrl()" class="h-40 overflow-hidden">
+        <div v-if="photoUrl()" class="aspect-[16/9] overflow-hidden">
           <img
             :src="photoUrl()!"
             :alt="activity.title"
-            class="w-full h-full object-cover"
+            class="w-full h-full object-cover object-center"
             loading="lazy"
             @error="($event.target as HTMLImageElement).parentElement!.style.display = 'none'"
           />
@@ -115,6 +133,16 @@ function statusDot() {
           <p class="text-xs text-gray-400 mt-2 leading-relaxed">{{ activity.description }}</p>
           <div class="mt-2">
             <ItineraryReasoningToggle :reasoning="activity.agentLogic" />
+          </div>
+          <div class="flex gap-2 mt-3">
+            <a :href="mapsUrl(activity)" target="_blank"
+              class="px-3 py-1.5 text-[11px] rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-700 transition-colors inline-flex items-center gap-1.5">
+              📍 Open in Maps
+            </a>
+            <a v-if="needsTicket(activity)" :href="ticketSearchUrl(activity)" target="_blank"
+              class="px-3 py-1.5 text-[11px] rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors inline-flex items-center gap-1.5">
+              🎟️ Find tickets
+            </a>
           </div>
         </div>
       </div>
