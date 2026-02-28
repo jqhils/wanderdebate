@@ -29,6 +29,11 @@ export default defineNuxtConfig({
       supabaseKey: '',
     },
   },
+  nitro: {
+    handlers: [
+      { route: '/api/debate/ground', handler: '../server/api/debate/ground.post.ts', method: 'post' },
+    ],
+  },
 
   typescript: {
     strict: true,

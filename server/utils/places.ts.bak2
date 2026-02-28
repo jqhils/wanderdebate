@@ -43,41 +43,30 @@ async function searchPlace(
   query: string,
   apiKey: string,
 ): Promise<PlaceResult | null> {
-  try {
-    const url = 'https://places.googleapis.com/v1/places:searchText'
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.id,places.location,places.types,places.currentOpeningHours,places.photos',
-      },
-      body: JSON.stringify({ textQuery: query }),
-    })
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`
 
-    const data = await response.json()
+  const response = await fetch(url)
+  const data = await response.json()
 
-    if (!data.places?.length) return null
-
-    const place = data.places[0]
-
-    return {
-      name: place.displayName?.text ?? '',
-      address: place.formattedAddress ?? '',
-      rating: place.rating ?? null,
-      totalRatings: place.userRatingCount ?? null,
-      placeId: place.id ?? '',
-      location: {
-        lat: place.location?.latitude ?? 0,
-        lng: place.location?.longitude ?? 0,
-      },
-      types: place.types ?? [],
-      openNow: place.currentOpeningHours?.openNow ?? null,
-      photoReference: place.photos?.[0]?.name ?? null,
-    }
-  } catch (e) {
-    console.error('[Places] Search failed for:', query, e)
+  if (data.status !== 'OK' || !data.results?.length) {
     return null
+  }
+
+  const place = data.results[0]
+
+  return {
+    name: place.name,
+    address: place.formatted_address ?? '',
+    rating: place.rating ?? null,
+    totalRatings: place.user_ratings_total ?? null,
+    placeId: place.place_id,
+    location: {
+      lat: place.geometry?.location?.lat ?? 0,
+      lng: place.geometry?.location?.lng ?? 0,
+    },
+    types: place.types ?? [],
+    openNow: place.opening_hours?.open_now ?? null,
+    photoReference: place.photos?.[0]?.photo_reference ?? null,
   }
 }
 

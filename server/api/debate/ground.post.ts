@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import { useServerSupabase, rowToVersion } from '../../utils/supabase'
 import { groundItinerary } from '../../utils/places'
+
 // DayPlan type inlined to avoid cross-boundary import
+type DayPlan = { theme: string; activities: any[] }
 type DayPlan = { theme: string; activities: any[] }
 
 const GroundBody = z.object({
