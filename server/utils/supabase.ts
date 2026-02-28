@@ -1,51 +1,25 @@
-import { serverSupabaseServiceRole } from '#supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 
-/**
- * Get a Supabase client with service role privileges for server-side operations.
- * Throws a clear error if Supabase env vars are not configured.
- */
-export function useServerSupabase(event: H3Event) {
-  const config = useRuntimeConfig(event)
-  const supabaseUrl
-    = (config.public as Record<string, unknown>)?.supabase && typeof (config.public as { supabase?: { url?: unknown } }).supabase?.url === 'string'
-      ? (config.public as { supabase?: { url?: string } }).supabase?.url
-      : undefined
+let _client: ReturnType<typeof createClient> | null = null
 
-  const serverKey
-    = config.supabase?.secretKey
-      || config.supabase?.serviceKey
-      || process.env.SUPABASE_SECRET_KEY
-      || process.env.SUPABASE_SERVICE_KEY
-      || process.env.SUPABASE_SERVICE_ROLE_KEY
+export function useServerSupabase(_event?: H3Event) {
+  if (_client) return _client
 
-  if (!supabaseUrl && !process.env.SUPABASE_URL) {
-    throw createError({
-      statusCode: 503,
-      message: 'BLOCKER: SUPABASE_URL is not configured. Set it in .env or nuxt.config.ts.',
-    })
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error('BLOCKER: SUPABASE_URL and SUPABASE_SECRET_KEY must be set in .env')
   }
 
-  if (!serverKey) {
-    throw createError({
-      statusCode: 503,
-      message: 'BLOCKER: Missing Supabase server key. Set SUPABASE_SECRET_KEY (recommended), SUPABASE_SERVICE_KEY, or SUPABASE_SERVICE_ROLE_KEY in .env.',
-    })
-  }
+  _client = createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
 
-  if ((supabaseUrl || process.env.SUPABASE_URL || '').includes('your-project.supabase.co') || String(serverKey).includes('your-service-key')) {
-    throw createError({
-      statusCode: 503,
-      message: 'BLOCKER: Supabase credentials are placeholders. Replace SUPABASE_URL and server key values in .env with real project credentials.',
-    })
-  }
-
-  return serverSupabaseServiceRole(event)
+  return _client
 }
 
-/**
- * Converts a snake_case database row to camelCase for the client.
- */
 export function rowToSession(row: Record<string, unknown>) {
   return {
     id: row.id as string,
@@ -56,7 +30,6 @@ export function rowToSession(row: Record<string, unknown>) {
     createdAt: (row.created_at as string),
   }
 }
-
 export function rowToVersion(row: Record<string, unknown>) {
   return {
     id: row.id as string,
@@ -69,7 +42,6 @@ export function rowToVersion(row: Record<string, unknown>) {
     createdAt: (row.created_at as string),
   }
 }
-
 export function rowToMessage(row: Record<string, unknown>) {
   return {
     id: row.id as string,
