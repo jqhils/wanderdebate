@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import type { ItineraryVersion } from '~/utils/schemas'
+import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 
 const props = defineProps<{
-  versions: ItineraryVersion[]
+  versions: any[]
   currentIndex: number
 }>()
 
@@ -16,10 +15,8 @@ const currentVersion = computed(() => props.versions[props.currentIndex])
 
 async function initMap() {
   if (!mapContainer.value || map) return
-
   const L = await import('leaflet')
 
-  // Fix default icon paths
   delete (L.Icon.Default.prototype as any)._getIconUrl
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -27,22 +24,22 @@ async function initMap() {
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
   })
 
-  map = L.map(mapContainer.value).setView([35.6762, 139.6503], 12)
+  map = L.map(mapContainer.value, { zoomControl: false }).setView([35.6762, 139.6503], 12)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · © CARTO',
     maxZoom: 19,
   }).addTo(map)
 
+  L.control.zoom({ position: 'topright' }).addTo(map)
+
   markersLayer = L.layerGroup().addTo(map)
   routeLayer = L.layerGroup().addTo(map)
-
   renderMarkers()
 }
 
 function renderMarkers() {
   if (!map || !markersLayer || !routeLayer) return
-
   import('leaflet').then((L) => {
     markersLayer.clearLayers()
     routeLayer.clearLayers()
@@ -50,119 +47,81 @@ function renderMarkers() {
     const version = currentVersion.value
     if (!version?.days?.length) return
 
-    const points: [number, number][] = []
+    const allPoints: [number, number][] = []
     let activityIndex = 0
+    const activities = version.days.flatMap((d: any) => d.activities ?? [])
 
-    for (const day of version.days) {
-      if (!day.activities) continue
+    for (let i = 0; i < activities.length; i++) {
+      const activity = activities[i]
+      const coords = activity.coordinates
+      if (!coords?.lat || !coords?.lng) continue
+      const latLng: [number, number] = [coords.lat, coords.lng]
 
-      for (const activity of day.activities) {
-        const coords = activity.coordinates
-        if (!coords?.lat || !coords?.lng) continue
-        if (activity.category === 'transit') continue
-
-        activityIndex++
-        const latLng: [number, number] = [coords.lat, coords.lng]
-        points.push(latLng)
-
-        // Numbered icon
-        const isVerified = activity.groundingStatus === 'verified'
-        const isReplaced = activity.groundingStatus === 'replaced'
-        const color = isVerified ? '#16a34a' : isReplaced ? '#f59e0b' : '#6b7280'
-
-        const icon = L.divIcon({
-          html: `<div style="
-            background: ${color};
-            color: white;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          ">${activityIndex}</div>`,
-          className: '',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
+      if (activity.category === 'transit') {
+        const transitIcon = L.divIcon({
+          html: `<div style="background:#3b82f6;color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid rgba(59,130,246,0.3);box-shadow:0 2px 8px rgba(59,130,246,0.4);">🚃</div>`,
+          className: '', iconSize: [22, 22], iconAnchor: [11, 11],
         })
+        const costMatch = (activity.agentLogic ?? '').match(/[¥￥][\d,]+/)
+        const cost = costMatch?.[0] ?? ''
+        const popup = `<div style="max-width:220px;"><strong style="font-size:12px;color:#60a5fa;">${activity.title}</strong><div style="font-size:11px;color:#888;margin-top:3px;">${activity.timeBlock}</div>${cost ? `<div style="font-size:11px;color:#60a5fa;margin-top:3px;">${cost}</div>` : ''}</div>`
+        L.marker(latLng, { icon: transitIcon }).bindPopup(popup).addTo(markersLayer)
 
-        const rating = activity.groundingData?.rating
-        const status = isVerified ? '✅ Verified' : isReplaced ? '🔄 Replaced' : '❓ Unverified'
-
-        const popup = `
-          <div style="max-width: 220px;">
-            <strong style="font-size: 13px;">${activityIndex}. ${activity.title}</strong>
-            <div style="font-size: 11px; color: #666; margin-top: 4px;">${activity.timeBlock}</div>
-            <div style="font-size: 11px; margin-top: 4px;">${status}${rating ? ` · ⭐ ${rating}` : ''}</div>
-            <div style="font-size: 11px; color: #888; margin-top: 4px;">${activity.location}</div>
-          </div>
-        `
-
-        L.marker(latLng, { icon }).bindPopup(popup).addTo(markersLayer)
+        if (allPoints.length > 0) {
+          L.polyline([allPoints[allPoints.length - 1], latLng], {
+            color: '#ef4444', weight: 2, opacity: 0.5, dashArray: '6, 8',
+          }).addTo(routeLayer)
+        }
+        allPoints.push(latLng)
+        continue
       }
+
+      activityIndex++
+      const isVerified = activity.groundingStatus === 'verified'
+      const isReplaced = activity.groundingStatus === 'replaced'
+      const color = isVerified ? '#16a34a' : isReplaced ? '#f59e0b' : '#6b7280'
+      const glow = isVerified ? 'rgba(22,163,74,0.3)' : isReplaced ? 'rgba(245,158,11,0.3)' : 'rgba(107,114,128,0.3)'
+
+      const icon = L.divIcon({
+        html: `<div style="background:${color};color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px ${glow},0 2px 4px rgba(0,0,0,0.3);">${activityIndex}</div>`,
+        className: '', iconSize: [30, 30], iconAnchor: [15, 15],
+      })
+
+      const rating = activity.groundingData?.rating
+      const status = isVerified ? '✅ Verified' : isReplaced ? '🔄 Replaced' : '❓ Unverified'
+      const costMatch = (activity.agentLogic ?? '').match(/[¥￥][\d,]+/)
+      const cost = costMatch?.[0] ?? ''
+      const popup = `<div style="max-width:240px;"><strong style="font-size:13px;">${activityIndex}. ${activity.title}</strong><div style="font-size:11px;color:#888;margin-top:4px;">${activity.timeBlock}</div><div style="font-size:11px;margin-top:4px;">${status}${rating ? ` · ⭐ ${rating}` : ''}${cost ? ` · ${cost}` : ''}</div><div style="font-size:11px;color:#aaa;margin-top:4px;">${activity.location}</div></div>`
+
+      L.marker(latLng, { icon }).bindPopup(popup).addTo(markersLayer)
+
+      if (allPoints.length > 0) {
+        L.polyline([allPoints[allPoints.length - 1], latLng], {
+          color: '#ef4444', weight: 3, opacity: 0.7,
+        }).addTo(routeLayer)
+      }
+      allPoints.push(latLng)
     }
 
-    // Draw route line
-    if (points.length > 1) {
-      L.polyline(points, {
-        color: '#f59e0b',
-        weight: 3,
-        opacity: 0.7,
-        dashArray: '8, 8',
-      }).addTo(routeLayer)
-    }
-
-    // Fit bounds
-    if (points.length > 0) {
-      const bounds = L.latLngBounds(points)
-      map.fitBounds(bounds, { padding: [40, 40] })
+    if (allPoints.length > 0) {
+      map.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50] })
     }
   })
 }
 
-onMounted(async () => {
-  await nextTick()
-  initMap()
-})
-
-watch(() => props.currentIndex, () => {
-  renderMarkers()
-})
-
-onUnmounted(() => {
-  if (map) {
-    map.remove()
-    map = null
-  }
-})
+onMounted(async () => { await nextTick(); initMap() })
+watch(() => props.currentIndex, () => renderMarkers())
+watch(() => props.versions.length, () => renderMarkers())
+onUnmounted(() => { if (map) { map.remove(); map = null } })
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
-    <!-- Legend -->
-    <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4 text-xs shrink-0">
-      <span class="flex items-center gap-1">
-        <span class="w-3 h-3 rounded-full bg-green-600 inline-block" /> Verified
-      </span>
-      <span class="flex items-center gap-1">
-        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Replaced
-      </span>
-      <span class="flex items-center gap-1">
-        <span class="w-3 h-3 rounded-full bg-gray-400 inline-block" /> Unverified
-      </span>
-      <span v-if="currentVersion" class="ml-auto text-gray-500">
-        v{{ currentVersion.versionNumber }}
-      </span>
-    </div>
-    <!-- Map -->
-    <div ref="mapContainer" class="flex-1" />
-  </div>
+  <div ref="mapContainer" class="h-full w-full" />
 </template>
 
 <style>
 @import 'leaflet/dist/leaflet.css';
+.leaflet-popup-content-wrapper { background: #1f2937 !important; color: #e5e7eb !important; border-radius: 12px !important; border: 1px solid #374151 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; }
+.leaflet-popup-tip { background: #1f2937 !important; }
+.leaflet-popup-close-button { color: #9ca3af !important; }
 </style>

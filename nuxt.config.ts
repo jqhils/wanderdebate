@@ -27,6 +27,7 @@ export default defineNuxtConfig({
     public: {
       supabaseUrl: '',
       supabaseKey: '',
+      googlePlacesApiKey: '',
     },
   },
   nitro: {
