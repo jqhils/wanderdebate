@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { AgentId, type DayPlan } from '../../app/utils/schemas'
 
-const MODEL = 'mistral-large-latest'
+const MODEL = 'mistral-small-latest'
 const MAX_TOKENS = 8192
 const MAX_RETRIES = 2
 
