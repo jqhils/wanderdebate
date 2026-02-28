@@ -1,0 +1,2 @@
+-- Optional local seed data for `supabase db reset --local`.
+-- Keep this file intentionally minimal until seed fixtures are needed.
