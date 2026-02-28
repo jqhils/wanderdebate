@@ -14,6 +14,7 @@ export interface PlaceResult {
   types: string[]
   openNow: boolean | null
   photoReference: string | null
+  websiteUri: string | null
 }
 
 export interface GroundingResult {
@@ -50,7 +51,7 @@ async function searchPlace(
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.id,places.location,places.types,places.currentOpeningHours,places.photos',
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.id,places.location,places.types,places.currentOpeningHours,places.photos,places.websiteUri',
       },
       body: JSON.stringify({ textQuery: query }),
     })
@@ -74,6 +75,7 @@ async function searchPlace(
       types: place.types ?? [],
       openNow: place.currentOpeningHours?.openNow ?? null,
       photoReference: place.photos?.[0]?.name ?? null,
+      websiteUri: place.websiteUri ?? null,
     }
   } catch (e) {
     console.error('[Places] Search failed for:', query, e)

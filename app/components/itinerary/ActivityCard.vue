@@ -31,15 +31,28 @@ function statusDot() {
 }
 
 function needsTicket(activity: any): boolean {
-  const text = ((activity.description || '') + ' ' + (activity.agentLogic || '') + ' ' + (activity.title || '')).toLowerCase()
-  return /ticket|reserv|book|admission|entry fee|skip.the.line|advance|museum|gallery|observation|deck|tower|teamlab|skytree/i.test(text)
+  // Only show for places that actually need tickets/reservations
+  if (activity.category === 'food' || activity.category === 'free-roam' || activity.category === 'transit') return false
+  const text = ((activity.description || '') + ' ' + (activity.agentLogic || '')).toLowerCase()
+  // Must explicitly mention tickets/booking/admission
+  if (/ticket|admission|entry fee|skip.the.line|book.*advance|reserv.*advance/i.test(text)) return true
+  // Known ticketed venue types
+  const title = (activity.title || '').toLowerCase()
+  if (/museum|gallery|skytree|teamlab|tower.*observation|aquarium|theme.park|disneyland|disney/i.test(title)) return true
+  return false
 }
 
 function ticketSearchUrl(activity: any): string {
-  // Use venue website from Google Places if available
+  // Use venue's official website from Google Places if available
   if (activity.groundingData?.websiteUri) return activity.groundingData.websiteUri
-  // Otherwise deep link to Klook (major ticket aggregator)
-  return 'https://www.klook.com/search/result/?keyword=' + encodeURIComponent(activity.title)
+  // Otherwise link to the venue's Google Maps page
+  if (activity.groundingData?.placeId) return 'https://www.google.com/maps/place/?q=place_id:' + activity.groundingData.placeId
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(activity.title + ' tickets')
+}
+
+function ticketLabel(activity: any): string {
+  if (activity.groundingData?.websiteUri) return '🎟️ Official site'
+  return '🎟️ Book tickets'
 }
 
 function mapsUrl(activity: any): string {

@@ -88,6 +88,7 @@ export default defineEventHandler(async (event) => {
             address: result.place.address,
             placeId: result.place.placeId,
             photoReference: result.place.photoReference,
+            websiteUri: result.place.websiteUri,
           },
         }
       }
@@ -109,6 +110,7 @@ export default defineEventHandler(async (event) => {
             address: result.replacement.address,
             placeId: result.replacement.placeId,
             photoReference: result.replacement.photoReference,
+            websiteUri: result.replacement.websiteUri,
           },
         }
       }
