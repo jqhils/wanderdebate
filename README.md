@@ -2,6 +2,10 @@
 
 WanderDebate is a Nuxt 3 app where opinionated travel agents debate and refine an itinerary in turns.
 
+Authenticated users can own multiple itineraries. New itinerary creation is rate-limited to 3 per UTC day per user.
+For testing, this limit can be toggled via `NUXT_DAILY_ITINERARY_LIMIT_ENABLED` (default: `TRUE`).
+At trip setup, users can choose the LLM provider per itinerary (`mistral` or `minimax`).
+
 ## Tech Stack
 
 - Nuxt 3 + Vue 3 + TypeScript
@@ -44,12 +48,24 @@ Set:
 - `SUPABASE_KEY` to anon key (`ANON_KEY`)
 - `SUPABASE_SECRET_KEY` to server secret (`SECRET_KEY`)
 - `NUXT_MISTRAL_API_KEY` to a real Mistral API key
+- `NUXT_MINIMAX_API_KEY` to a real MiniMax API key (only needed if selecting MiniMax)
+- `NUXT_MINIMAX_BASE_URL` (optional, defaults to `https://api.minimax.io/v1`)
+- `NUXT_DAILY_ITINERARY_LIMIT_ENABLED` to `TRUE` (default) or `FALSE` for testing without quota
 
 4. Run the app:
 
 ```bash
 pnpm dev
 ```
+
+5. Create an account in the app (email/password) and sign in before creating itineraries.
+
+## Local Demo Users
+
+After `supabase db reset --local`, these users are available from `supabase/seed.sql`:
+
+- `test1@test.com` / `testtest123`
+- `test2@test.com` / `testtest123`
 
 ## Useful Commands
 

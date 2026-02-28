@@ -4,6 +4,10 @@ import { z } from 'zod'
 export const AgentId = z.enum(['flaneur', 'completionist', 'master'])
 export type AgentId = z.infer<typeof AgentId>
 
+// --- LLM provider ---
+export const LlmProvider = z.enum(['mistral', 'minimax'])
+export type LlmProvider = z.infer<typeof LlmProvider>
+
 // --- Single activity within a day ---
 export const ActivitySchema = z.object({
   id: z.string().uuid(),
@@ -89,6 +93,7 @@ export const SessionSchema = z.object({
   destination: z.string(),
   durationHours: z.number().positive(),
   agents: z.array(AgentId),
+  llmProvider: LlmProvider,
   status: z.enum(['setup', 'debating', 'paused', 'complete']),
   createdAt: z.string().datetime(),
 })

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useSession } from '~/composables/useSession'
+import type { LlmProvider } from '~/utils/schemas'
+import flaneurAvatar from '~/assets/images/agents/flaneur.png'
+import completionistAvatar from '~/assets/images/agents/completionist.png'
 
 const router = useRouter()
 const { createSession, loading, error } = useSession()
@@ -20,6 +23,21 @@ const selectedAgents = ref({
   flaneur: true,
   completionist: true,
 })
+const llmProvider = ref<LlmProvider>('mistral')
+
+const llmOptions: Array<{
+  value: LlmProvider
+  label: string
+}> = [
+  {
+    value: 'mistral',
+    label: 'Mistral Large',
+  },
+  {
+    value: 'minimax',
+    label: 'MiniMax M2.5',
+  },
+]
 
 const durationHours = computed(() =>
   durationMode.value === 'preset' ? presetHours.value : customDays.value * 24,
@@ -45,6 +63,7 @@ async function handlePlan() {
     destination: destination.value.trim(),
     durationHours: durationHours.value,
     agents,
+    llmProvider: llmProvider.value,
   })
 
   if (session) {
@@ -66,7 +85,7 @@ async function handlePlan() {
       <template #header>
         <div class="text-center">
           <UIcon name="i-lucide-compass" class="size-10 text-amber-500 mb-2" />
-          <h1 class="text-2xl font-bold">Traveling Where?</h1>
+          <h1 class="text-2xl font-bold">Plan A Trip Worth Arguing Over</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Let our AI agents debate your perfect itinerary
           </p>
@@ -127,31 +146,69 @@ async function handlePlan() {
           <div class="flex gap-3">
             <button
               :class="[
-                'flex-1 rounded-xl border-2 p-3 text-center transition-all',
+                'flex-1 rounded-xl border-2 p-3 text-center transition-all flex flex-col items-center justify-start',
                 selectedAgents.flaneur
                   ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-600'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300',
               ]"
               @click="selectedAgents.flaneur = !selectedAgents.flaneur"
             >
-              <UIcon name="i-lucide-footprints" class="size-6 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
-              <div class="text-sm font-semibold">Slow</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">The Flaneur</div>
+              <div class="h-24 w-24 mx-auto mb-2 flex items-end justify-center">
+                <img
+                  :src="flaneurAvatar"
+                  alt="The Flaneur"
+                  class="h-full w-full object-contain object-bottom drop-shadow-md"
+                >
+              </div>
+              <div class="text-sm font-semibold min-h-[2.5rem] flex items-center justify-center leading-tight">
+                The Flaneur
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">Immersive Wanderer</div>
             </button>
             <button
               :class="[
-                'flex-1 rounded-xl border-2 p-3 text-center transition-all',
+                'flex-1 rounded-xl border-2 p-3 text-center transition-all flex flex-col items-center justify-start',
                 selectedAgents.completionist
                   ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300',
               ]"
               @click="selectedAgents.completionist = !selectedAgents.completionist"
             >
-              <UIcon name="i-lucide-list-checks" class="size-6 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
-              <div class="text-sm font-semibold">Fast</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">The Completionist</div>
+              <div class="h-24 w-24 mx-auto mb-2 flex items-end justify-center">
+                <img
+                  :src="completionistAvatar"
+                  alt="The Completionist"
+                  class="h-full w-full object-contain object-bottom drop-shadow-md"
+                >
+              </div>
+              <div class="text-sm font-semibold min-h-[2.5rem] flex items-center justify-center leading-tight">
+                The Completionist
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">Efficiency Strategist</div>
             </button>
           </div>
+        </div>
+
+        <!-- LLM Provider -->
+        <div>
+          <label class="text-sm font-medium mb-1.5 block">Model</label>
+          <div class="relative">
+            <select
+              v-model="llmProvider"
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+            >
+              <option
+                v-for="option in llmOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Mistral is selected by default.
+          </p>
         </div>
       </div>
 

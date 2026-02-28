@@ -9,6 +9,7 @@ definePageMeta({
 
 const route = useRoute()
 const store = useDebateStore()
+const user = useSupabaseUser()
 const { startDebate, continueDebate } = useOrchestrator()
 const { loadSession, subscribeToRealtime, unsubscribeFromRealtime, sendUserMessage, loading, error } = useSession()
 const toast = useToast()
@@ -20,6 +21,11 @@ const sessionId = computed(() => route.params.id as string)
 
 // Load session data and subscribe to Realtime on mount
 onMounted(async () => {
+  if (!user.value) {
+    await navigateTo('/')
+    return
+  }
+
   store.reset()
 
   // Load existing session data from Supabase

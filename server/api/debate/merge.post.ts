@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { useServerSupabase, rowToVersion, rowToMessage } from '../../utils/supabase'
+import { requireAuthUser } from '../../utils/auth'
 import {
+  MINIMAX_MODEL,
+  QUALITY_MODEL,
   LlmResponseSchema,
   assignActivityIds,
   callAgentWithRetry,
@@ -20,11 +23,13 @@ const MergeBody = z.object({
 export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, MergeBody.parse)
   const client = useServerSupabase(event)
+  const user = await requireAuthUser(event)
   const [sessionResult, flaneurResult, completionistResult] = await Promise.all([
     client
       .from('sessions')
-      .select('destination, duration_hours')
+      .select('destination, duration_hours, llm_provider')
       .eq('id', body.sessionId)
+      .eq('user_id', user.id)
       .single(),
     client
       .from('itinerary_versions')
@@ -63,6 +68,7 @@ export default defineEventHandler(async (event) => {
 
   const userConstraints = await fetchUserConstraints(client, body.sessionId)
   const durationHours = Number(sessionResult.data.duration_hours)
+  const provider = sessionResult.data.llm_provider === 'minimax' ? 'minimax' : 'mistral'
 
   const llmResponse = await callAgentWithRetry(
     getSystemPrompt('master', 'merge'),
@@ -84,6 +90,13 @@ export default defineEventHandler(async (event) => {
       userConstraints,
     ),
     LlmResponseSchema,
+    {
+      tag: `merge:v${body.versionNumber}`,
+      provider,
+      model: provider === 'minimax' ? MINIMAX_MODEL : QUALITY_MODEL,
+      maxTokens: provider === 'minimax' ? 4200 : 2600,
+      maxRetries: provider === 'minimax' ? 1 : 2,
+    },
   )
 
   const days = assignActivityIds(llmResponse.days)

@@ -47,11 +47,14 @@ export function useServerSupabase(event: H3Event) {
  * Converts a snake_case database row to camelCase for the client.
  */
 export function rowToSession(row: Record<string, unknown>) {
+  const llmProvider = row.llm_provider === 'minimax' ? 'minimax' : 'mistral'
+
   return {
     id: row.id as string,
     destination: row.destination as string,
     durationHours: Number(row.duration_hours),
     agents: row.agents as string[],
+    llmProvider,
     status: row.status as string,
     createdAt: (row.created_at as string),
   }

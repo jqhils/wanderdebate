@@ -12,6 +12,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck"
   },
@@ -23,7 +24,6 @@
     "@nuxtjs/supabase": "^2.0.4",
     "@pinia/nuxt": "^0.11.3",
     "@vueuse/nuxt": "^14.2.1",
-    "isomorphic-dompurify": "^3.0.0",
     "markdown-it": "^14.1.1",
     "nuxt": "^3.21.1",
     "pinia": "^3.0.4",

@@ -27,6 +27,10 @@ export function useOrchestrator() {
   const currentTurnIndex = ref(0)
   const abortController = ref<AbortController | null>(null)
 
+  function hasVersionForTurn(turnIndex: number): boolean {
+    return store.versions.some(v => v.versionNumber === turnIndex)
+  }
+
   /**
    * Execute a single turn by calling the appropriate server API route.
    * Server routes generate itinerary content via LLM and persistence.
@@ -38,7 +42,13 @@ export function useOrchestrator() {
     const sessionId = store.session?.id
     if (!sessionId) return false
 
+    if (hasVersionForTurn(turnIndex)) {
+      console.info(`[Orchestrator] Turn ${turnIndex} already exists, skipping`)
+      return true
+    }
+
     try {
+      const startedAt = performance.now()
       const endpoint = `/api/debate/${turn.type}`
       const body: Record<string, unknown> = {
         sessionId,
@@ -55,6 +65,7 @@ export function useOrchestrator() {
       const result = await $fetch<{ version: ItineraryVersion; message: ChatMessage }>(endpoint, {
         method: 'POST',
         body,
+        signal: abortController.value?.signal,
       })
 
       // The data will arrive via Realtime subscription (useSession),
@@ -67,9 +78,15 @@ export function useOrchestrator() {
         store.addMessage(result.message)
       }
 
+      const elapsedMs = Math.round(performance.now() - startedAt)
+      console.info(`[Orchestrator] Turn ${turnIndex} (${turn.type}) completed in ${elapsedMs}ms`)
       return true
     }
     catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return false
+      }
+
       console.error(`[Orchestrator] Turn ${turnIndex} failed:`, err)
 
       // Add error system message
@@ -97,7 +114,37 @@ export function useOrchestrator() {
     store.isDebating = true
 
     const startIndex = currentTurnIndex.value
-    for (let i = startIndex; i < TURN_SEQUENCE.length; i++) {
+    if (startIndex === 0) {
+      const parallelStartedAt = performance.now()
+      const [flaneurOk, completionistOk] = await Promise.all([
+        executeTurn(0),
+        executeTurn(1),
+      ])
+      const elapsedMs = Math.round(performance.now() - parallelStartedAt)
+      console.info(`[Orchestrator] Parallel propose phase completed in ${elapsedMs}ms`)
+
+      if (!flaneurOk || !completionistOk) {
+        if (!hasVersionForTurn(0)) {
+          currentTurnIndex.value = 0
+        }
+        else if (!hasVersionForTurn(1)) {
+          currentTurnIndex.value = 1
+        }
+        else {
+          currentTurnIndex.value = 2
+        }
+
+        store.isDebating = false
+        if (store.session) {
+          store.session.status = 'debating'
+        }
+        return
+      }
+
+      currentTurnIndex.value = 2
+    }
+
+    for (let i = currentTurnIndex.value; i < TURN_SEQUENCE.length; i++) {
       if (abortController.value.signal.aborted) break
 
       currentTurnIndex.value = i

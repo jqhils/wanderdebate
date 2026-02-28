@@ -43,6 +43,7 @@ export const useDebateStore = defineStore('debate', () => {
 
   function addVersion(version: ItineraryVersion) {
     versions.value.push(version)
+    versions.value.sort((a, b) => a.versionNumber - b.versionNumber)
     // Auto-advance to latest version
     currentVersionIndex.value = versions.value.length - 1
   }
