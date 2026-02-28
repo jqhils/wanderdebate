@@ -53,18 +53,19 @@ export default defineEventHandler(async (event) => {
   // Insert version
   const { data: versionRow, error: versionError } = await client
     .from('itinerary_versions')
-    .insert({
+    .upsert({
       session_id: body.sessionId,
       version_number: body.versionNumber,
       agent_id: body.agentId,
       commentary: llmResponse.commentary,
       days,
       changes_summary: changesSummary,
-    })
+    }, { onConflict: 'session_id,version_number' })
     .select()
     .single()
 
   if (versionError || !versionRow) {
+    console.error('[Propose] VERSION SAVE FAILED:', versionError)
     throw createError({
       statusCode: 500,
       message: `Failed to create version: ${versionError?.message ?? 'unknown'}`,
@@ -85,6 +86,7 @@ export default defineEventHandler(async (event) => {
     .single()
 
   if (messageError || !messageRow) {
+    console.error('[Propose] MESSAGE SAVE FAILED:', messageError)
     throw createError({
       statusCode: 500,
       message: `Failed to create message: ${messageError?.message ?? 'unknown'}`,

@@ -26,6 +26,7 @@ export function useOrchestrator() {
   const store = useDebateStore()
   const currentTurnIndex = ref(0)
   const abortController = ref<AbortController | null>(null)
+  const running = ref(false)
 
   /**
    * Execute a single turn by calling the appropriate server API route.
@@ -39,6 +40,7 @@ export function useOrchestrator() {
     if (!sessionId) return false
 
     try {
+      console.log('[Orchestrator] Turn', turnIndex, turn.type)
       const endpoint = `/api/debate/${turn.type}`
       const body: Record<string, unknown> = {
         sessionId,
@@ -90,7 +92,8 @@ export function useOrchestrator() {
    * Run the full debate sequence from the current turn to the end.
    */
   async function startDebate() {
-    if (store.isDebating) return
+    if (store.isDebating || running.value) return
+    running.value = true
     if (!store.session) return
 
     abortController.value = new AbortController()
@@ -107,19 +110,23 @@ export function useOrchestrator() {
       // Brief pause between turns to avoid Mistral rate limits
       await new Promise(r => setTimeout(r, 2000))
 
-      // Fire grounding in background (don't block debate)
-      if (store.session?.id) {
-        $fetch('/api/debate/ground', {
-          method: 'POST',
-          body: { sessionId: store.session.id, versionNumber: i },
-        }).catch(err => console.warn('[Grounding] Background grounding failed:', err))
-      }
+
 
       currentTurnIndex.value = i + 1
     }
 
+    // Ground the final version
+    const lastVersion = currentTurnIndex.value - 1
+    if (store.session?.id && lastVersion >= 0) {
+      $fetch('/api/debate/ground', {
+        method: 'POST',
+        body: { sessionId: store.session.id, versionNumber: lastVersion },
+      }).catch(err => console.warn('[Grounding] Failed:', err))
+    }
+
     // Debate finished (hard stop)
     store.isDebating = false
+    running.value = false
     if (store.session) {
       store.session.status = currentTurnIndex.value >= TURN_SEQUENCE.length ? 'paused' : 'debating'
     }

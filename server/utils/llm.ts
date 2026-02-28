@@ -1,74 +1,29 @@
-import { Mistral } from '@mistralai/mistralai'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { AgentId, type DayPlan } from '../../app/utils/schemas'
 
 const MODEL = 'mistral-small-latest'
-const MAX_TOKENS = 8192
+const MAX_TOKENS = 4096
 const MAX_RETRIES = 3
 
-let _client: Mistral | null = null
-
-/**
- * Singleton Mistral client. Fails fast if API key is missing.
- */
-export function getMistralClient(): Mistral {
-  if (_client) return _client
-
-  const config = useRuntimeConfig()
-  const apiKey = config.mistralApiKey
-
-  if (!apiKey) {
-    throw createError({
-      statusCode: 503,
-      message: 'BLOCKER: NUXT_MISTRAL_API_KEY is not configured. Set it in .env.',
-    })
-  }
-
-  _client = new Mistral({ apiKey })
-  return _client
-}
-
-/**
- * Zod schema for LLM output — activity `id` is optional since LLMs
- * are unreliable UUID generators. We assign IDs server-side.
- */
-const LlmActivitySchema = z.object({
+export const LlmActivitySchema = z.object({
   id: z.string().optional(),
   timeBlock: z.string(),
   title: z.string(),
   description: z.string(),
   location: z.string(),
-  coordinates: z
-    .object({
-      lat: z.number(),
-      lng: z.number(),
-    })
-    .optional(),
+  coordinates: z.object({ lat: z.number(), lng: z.number() }).optional(),
   durationMinutes: z.number().int().positive(),
-category: z.string().transform((val) => {
+  category: z.string().transform((val) => {
     const valid = ['landmark', 'food', 'culture', 'nature', 'nightlife', 'transit', 'free-roam'] as const
     const lower = val.toLowerCase().replace(/\s+/g, '-')
     if ((valid as readonly string[]).includes(lower)) return lower
-    // Map common LLM outputs to valid categories
     const map: Record<string, string> = {
-      'shopping': 'landmark',
-      'entertainment': 'culture',
-      'experience': 'culture',
-      'observation': 'landmark',
-      'dining': 'food',
-      'restaurant': 'food',
-      'cafe': 'food',
-      'temple': 'landmark',
-      'shrine': 'landmark',
-      'museum': 'culture',
-      'park': 'nature',
-      'garden': 'nature',
-      'bar': 'nightlife',
-      'transport': 'transit',
-      'walk': 'free-roam',
-      'exploration': 'free-roam',
-      'sightseeing': 'landmark',
+      shopping: 'landmark', entertainment: 'culture', experience: 'culture',
+      observation: 'landmark', dining: 'food', restaurant: 'food', cafe: 'food',
+      temple: 'landmark', shrine: 'landmark', museum: 'culture',
+      park: 'nature', garden: 'nature', bar: 'nightlife',
+      transport: 'transit', walk: 'free-roam', exploration: 'free-roam', sightseeing: 'landmark',
     }
     return map[lower] ?? 'culture'
   }),
@@ -89,10 +44,6 @@ export const LlmResponseSchema = z.object({
 
 export type LlmResponse = z.infer<typeof LlmResponseSchema>
 
-/**
- * Extract JSON from LLM output — tries fenced JSON first, then raw JSON.
- * Validates against the provided Zod schema.
- */
 export function extractAndValidate<T>(raw: string, schema: z.ZodType<T>): T {
   const fenceMatch = raw.match(/```json\s*([\s\S]*?)\s*```/i)
   const candidate = fenceMatch ? fenceMatch[1] : raw.trim()
@@ -100,54 +51,66 @@ export function extractAndValidate<T>(raw: string, schema: z.ZodType<T>): T {
   return schema.parse(parsed)
 }
 
-/**
- * Call Mistral chat completion with retry logic.
- * Retries up to MAX_RETRIES times on parse/validation failure (3 total attempts).
- */
 export async function callAgentWithRetry<T>(
   systemPrompt: string,
   userPrompt: string,
   schema: z.ZodType<T>,
 ): Promise<T> {
-  const client = getMistralClient()
+  const config = useRuntimeConfig()
+  const apiKey = config.mistralApiKey
+  if (!apiKey) throw createError({ statusCode: 503, message: 'MISTRAL_API_KEY not set' })
+
   let lastError: unknown
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const result = await Promise.race([
-        client.chat.complete({
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 45000)
+
+      const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           model: MODEL,
-          maxTokens: MAX_TOKENS,
+          max_tokens: MAX_TOKENS,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Mistral timeout after 60s')), 60000)),
-      ]) as any
+        signal: controller.signal,
+      })
 
-      const content = result.choices?.[0]?.message?.content
-      if (typeof content !== 'string') {
-        throw new Error('No text content in LLM response')
+      clearTimeout(timer)
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error('Mistral API ' + res.status + ': ' + text.slice(0, 200))
       }
 
-      return extractAndValidate(content, schema)
+      const data = await res.json() as any
+      const txt = data.choices?.[0]?.message?.content
+      if (typeof txt !== 'string') throw new Error('No text content in LLM response')
+
+      console.log('[LLM] Got response, length:', txt.length)
+      return extractAndValidate(txt, schema)
     }
-    catch (err) {
+    catch (err: any) {
       lastError = err
-      console.warn(`[LLM] Attempt ${attempt + 1}/${MAX_RETRIES + 1} failed:`, err instanceof Error ? err.message : err)
+      const msg = err.name === 'AbortError' ? 'Timeout after 45s' : (err.message ?? err)
+      console.warn('[LLM] Attempt ' + (attempt + 1) + '/' + (MAX_RETRIES + 1) + ' failed:', msg)
     }
   }
 
   throw createError({
     statusCode: 502,
-    message: `LLM call failed after ${MAX_RETRIES + 1} attempts: ${lastError instanceof Error ? lastError.message : 'unknown error'}`,
+    message: 'LLM failed after ' + (MAX_RETRIES + 1) + ' attempts: ' + (lastError instanceof Error ? lastError.message : 'unknown'),
   })
 }
 
-/**
- * Assign UUIDs to any activities missing an `id` field.
- */
 export function assignActivityIds(days: LlmResponse['days']): DayPlan[] {
   return days.map(day => ({
     ...day,
@@ -158,27 +121,11 @@ export function assignActivityIds(days: LlmResponse['days']): DayPlan[] {
   }))
 }
 
-/**
- * Compute a changes summary by comparing activity titles between two versions.
- */
-export function computeChangesSummary(
-  previousDays: DayPlan[],
-  currentDays: DayPlan[],
-) {
-  const prevTitles = new Set(
-    previousDays.flatMap(d => d.activities.map(a => a.title)),
-  )
+export function computeChangesSummary(previousDays: DayPlan[], currentDays: DayPlan[]) {
+  const prevTitles = new Set(previousDays.flatMap(d => d.activities.map(a => a.title)))
   const currActivities = currentDays.flatMap(d => d.activities)
   const currTitles = new Set(currActivities.map(a => a.title))
-
-  const dropped = previousDays
-    .flatMap(d => d.activities)
-    .filter(a => !currTitles.has(a.title))
-    .map(a => ({ title: a.title, timeBlock: a.timeBlock }))
-
-  const added = currActivities
-    .filter(a => !prevTitles.has(a.title))
-    .map(a => ({ title: a.title, timeBlock: a.timeBlock, agentOrigin: a.agentOrigin }))
-
+  const dropped = previousDays.flatMap(d => d.activities).filter(a => !currTitles.has(a.title)).map(a => ({ title: a.title, timeBlock: a.timeBlock }))
+  const added = currActivities.filter(a => !prevTitles.has(a.title)).map(a => ({ title: a.title, timeBlock: a.timeBlock, agentOrigin: a.agentOrigin }))
   return { dropped, added }
 }

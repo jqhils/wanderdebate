@@ -19,6 +19,7 @@ const CritiqueBody = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  console.log("[Critique] Starting critique")
   const body = await readValidatedBody(event, CritiqueBody.parse)
   const client = useServerSupabase(event)
 
@@ -82,7 +83,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: versionRow, error: versionError } = await client
     .from('itinerary_versions')
-    .insert({
+    .upsert({
       session_id: body.sessionId,
       version_number: body.versionNumber,
       agent_id: body.agentId,
@@ -94,6 +95,7 @@ export default defineEventHandler(async (event) => {
     .single()
 
   if (versionError || !versionRow) {
+    console.error('[Critique] VERSION SAVE FAILED:', versionError)
     throw createError({
       statusCode: 500,
       message: `Failed to create critique version: ${versionError?.message ?? 'unknown'}`,
@@ -113,6 +115,7 @@ export default defineEventHandler(async (event) => {
     .single()
 
   if (messageError || !messageRow) {
+    console.error('[Critique] MESSAGE SAVE FAILED:', messageError)
     throw createError({
       statusCode: 500,
       message: `Failed to create critique message: ${messageError?.message ?? 'unknown'}`,
