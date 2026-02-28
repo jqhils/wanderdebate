@@ -46,15 +46,32 @@ const LlmActivitySchema = z.object({
     })
     .optional(),
   durationMinutes: z.number().int().positive(),
-  category: z.enum([
-    'landmark',
-    'food',
-    'culture',
-    'nature',
-    'nightlife',
-    'transit',
-    'free-roam',
-  ]),
+category: z.string().transform((val) => {
+    const valid = ['landmark', 'food', 'culture', 'nature', 'nightlife', 'transit', 'free-roam'] as const
+    const lower = val.toLowerCase().replace(/\s+/g, '-')
+    if ((valid as readonly string[]).includes(lower)) return lower
+    // Map common LLM outputs to valid categories
+    const map: Record<string, string> = {
+      'shopping': 'landmark',
+      'entertainment': 'culture',
+      'experience': 'culture',
+      'observation': 'landmark',
+      'dining': 'food',
+      'restaurant': 'food',
+      'cafe': 'food',
+      'temple': 'landmark',
+      'shrine': 'landmark',
+      'museum': 'culture',
+      'park': 'nature',
+      'garden': 'nature',
+      'bar': 'nightlife',
+      'transport': 'transit',
+      'walk': 'free-roam',
+      'exploration': 'free-roam',
+      'sightseeing': 'landmark',
+    }
+    return map[lower] ?? 'culture'
+  }),
   agentOrigin: AgentId,
   agentLogic: z.string(),
 })
