@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ItineraryVersion } from '~/utils/schemas'
-import { getAgentConfig } from '~/utils/agentConfig'
 
 const props = defineProps<{
   versions: ItineraryVersion[]
@@ -12,6 +11,12 @@ const emit = defineEmits<{
 }>()
 
 const currentVersion = computed(() => props.versions[props.currentIndex] ?? null)
+const hasChangesSummary = computed(() => Boolean(currentVersion.value?.changesSummary))
+const changesPaneCollapsed = ref(false)
+
+watch(() => currentVersion.value?.id, () => {
+  changesPaneCollapsed.value = false
+})
 </script>
 
 <template>
@@ -35,29 +40,42 @@ const currentVersion = computed(() => props.versions[props.currentIndex] ?? null
         @select="emit('update:currentIndex', $event)"
       />
 
-      <div v-if="currentVersion" class="flex-1 overflow-y-auto p-4 space-y-4">
-        <!-- Agent commentary -->
-        <div :class="['rounded-lg p-3 text-sm', getAgentConfig(currentVersion.agentId).bgClass]">
-          <div class="flex items-center gap-2 mb-1">
-            <ChatAgentAvatar :agent-id="currentVersion.agentId" size="sm" />
-            <span :class="['text-xs font-semibold', getAgentConfig(currentVersion.agentId).textClass]">
-              {{ getAgentConfig(currentVersion.agentId).label }}
-            </span>
-            <span class="text-xs text-gray-400">v{{ currentVersion.versionNumber }}</span>
+      <div v-if="currentVersion" class="flex-1 min-h-0 p-4 flex flex-col gap-4">
+        <div v-if="hasChangesSummary" class="flex-1 min-h-0 flex flex-col gap-4">
+          <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+            <div class="pb-1">
+              <ItineraryTimeline :days="currentVersion.days" />
+            </div>
           </div>
-          <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
-            {{ currentVersion.commentary }}
-          </p>
+
+          <aside class="shrink-0">
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
+              <button
+                class="w-full px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between"
+                @click="changesPaneCollapsed = !changesPaneCollapsed"
+              >
+                <span>Changes from previous version</span>
+                <UIcon
+                  :name="changesPaneCollapsed ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'"
+                  class="size-4 shrink-0"
+                />
+              </button>
+
+              <div v-if="!changesPaneCollapsed" class="max-h-[35vh] overflow-y-auto p-3">
+                <ItineraryChangesSummary
+                  :changes="currentVersion.changesSummary!"
+                  :hide-title="true"
+                />
+              </div>
+            </div>
+          </aside>
         </div>
 
-        <!-- Timeline -->
-        <ItineraryTimeline :days="currentVersion.days" />
-
-        <!-- Changes Summary -->
-        <ItineraryChangesSummary
-          v-if="currentVersion.changesSummary"
-          :changes="currentVersion.changesSummary"
-        />
+        <div v-else class="flex-1 min-h-0 overflow-y-auto pr-1">
+          <div class="pb-1">
+            <ItineraryTimeline :days="currentVersion.days" />
+          </div>
+        </div>
       </div>
     </template>
   </div>
