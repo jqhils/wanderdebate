@@ -1,2 +1,19 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* ──────────────────────────────────────────────
+   WanderDebate Design Tokens
+   Shared across all pages for visual consistency.
+   ────────────────────────────────────────────── */
+:root {
+  --wd-surface: #0c0c0e;
+  --wd-surface-raised: #151518;
+  --wd-surface-card: #1a1a1e;
+  --wd-border: rgba(255, 255, 255, 0.07);
+  --wd-border-strong: rgba(255, 255, 255, 0.12);
+  --wd-ink: #f1f0ec;
+  --wd-ink-2: #a8a5a0;
+  --wd-ink-3: #6b6762;
+  --wd-teal: #2dd4bf;
+  --wd-amber: #f59e0b;
+}

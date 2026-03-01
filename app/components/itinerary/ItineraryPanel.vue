@@ -21,15 +21,15 @@ watch(() => currentVersion.value?.id, () => {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <h2 class="text-lg font-semibold">Itinerary</h2>
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--wd-border)]">
+      <h2 class="text-lg font-semibold text-[var(--wd-ink)]">Itinerary</h2>
     </div>
 
     <!-- Empty state -->
     <div v-if="versions.length === 0" class="flex-1 flex items-center justify-center p-8">
       <div class="text-center">
-        <UIcon name="i-lucide-loader-circle" class="size-10 text-gray-300 dark:text-gray-600 animate-spin mx-auto mb-3" />
-        <p class="text-sm text-gray-500 dark:text-gray-400">Agents are thinking...</p>
+        <UIcon name="i-lucide-loader-circle" class="size-10 text-[var(--wd-ink-3)] animate-spin mx-auto mb-3" />
+        <p class="text-sm text-[var(--wd-ink-3)]">Agents are thinking...</p>
       </div>
     </div>
 
@@ -49,9 +49,9 @@ watch(() => currentVersion.value?.id, () => {
           </div>
 
           <aside class="shrink-0">
-            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
+            <div class="rounded-xl border border-[var(--wd-border)] bg-[var(--wd-surface-raised)] overflow-hidden">
               <button
-                class="w-full px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between"
+                class="w-full px-3 py-2 border-b border-[var(--wd-border)] text-xs font-semibold uppercase tracking-wider text-[var(--wd-ink-3)] flex items-center justify-between"
                 @click="changesPaneCollapsed = !changesPaneCollapsed"
               >
                 <span>Changes from previous version</span>

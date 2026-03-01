@@ -84,20 +84,20 @@ function handleKeydown(event: KeyboardEvent) {
         >
           {{ roleBadge }}
         </UBadge>
-        <span class="text-xs text-gray-400">{{ timestamp }}</span>
+        <span class="text-xs text-[var(--wd-ink-3)]">{{ timestamp }}</span>
       </div>
       <div
         :class="[
           'rounded-2xl px-4 py-3 text-sm leading-relaxed',
           isUser
-            ? 'bg-amber-500 text-white rounded-tr-sm'
+            ? 'bg-[var(--wd-teal)] text-[var(--wd-surface)] rounded-tr-sm'
             : `${config.bgClass} border ${config.borderClass} rounded-tl-sm`,
-          isSelectable ? 'transition-all hover:ring-1 hover:ring-amber-400/50' : '',
-          isSelected ? 'ring-2 ring-amber-400' : '',
+          isSelectable ? 'transition-all hover:ring-1 hover:ring-[var(--wd-teal)]/50' : '',
+          isSelected ? 'ring-2 ring-[var(--wd-teal)]' : '',
         ]"
       >
         <!-- eslint-disable vue/no-v-html -->
-        <div class="prose prose-sm max-w-none dark:prose-invert" v-html="renderedContent" />
+        <div class="prose prose-sm max-w-none prose-invert" v-html="renderedContent" />
       </div>
     </div>
   </div>

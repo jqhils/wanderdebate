@@ -83,19 +83,19 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-white dark:bg-gray-900">
+  <div class="session-shell h-screen flex flex-col">
     <!-- Header -->
-    <header class="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 shrink-0">
+    <header class="session-header flex items-center justify-between px-4 py-2.5 shrink-0">
       <div class="flex items-center gap-3">
-        <NuxtLink to="/" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+        <NuxtLink to="/" class="text-[var(--wd-ink-3)] hover:text-[var(--wd-ink)]">
           <UIcon name="i-lucide-arrow-left" class="size-5" />
         </NuxtLink>
         <div v-if="store.session">
-          <h1 class="font-semibold text-sm leading-tight">{{ store.session.destination }}</h1>
-          <p class="text-xs text-gray-500">{{ store.session.durationHours }}h trip</p>
+          <h1 class="font-semibold text-sm leading-tight text-[var(--wd-ink)]">{{ store.session.destination }}</h1>
+          <p class="text-xs text-[var(--wd-ink-3)]">{{ store.session.durationHours }}h trip</p>
         </div>
         <div v-else>
-          <h1 class="font-semibold text-sm leading-tight">
+          <h1 class="font-semibold text-sm leading-tight text-[var(--wd-ink)]">
             {{ loading ? 'Loading...' : 'Setting up...' }}
           </h1>
         </div>
@@ -108,8 +108,8 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
     <!-- Loading state -->
     <div v-if="loading && !store.session" class="flex-1 flex items-center justify-center">
       <div class="text-center">
-        <UIcon name="i-lucide-loader-circle" class="size-10 text-amber-500 animate-spin mx-auto mb-3" />
-        <p class="text-sm text-gray-500">Loading session...</p>
+        <UIcon name="i-lucide-loader-circle" class="size-10 text-[var(--wd-amber)] animate-spin mx-auto mb-3" />
+        <p class="text-sm text-[var(--wd-ink-3)]">Loading session...</p>
       </div>
     </div>
 
@@ -117,7 +117,7 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
     <div v-else-if="error && !store.session" class="flex-1 flex items-center justify-center p-8">
       <div class="text-center max-w-sm">
         <UIcon name="i-lucide-alert-triangle" class="size-10 text-red-500 mx-auto mb-3" />
-        <p class="text-sm text-red-600 dark:text-red-400 mb-4">{{ error }}</p>
+        <p class="text-sm text-red-400 mb-4">{{ error }}</p>
         <UButton to="/" variant="outline" icon="i-lucide-arrow-left">
           Back to Setup
         </UButton>
@@ -127,13 +127,13 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
     <!-- Session loaded -->
     <template v-else>
       <!-- Mobile tabs (< lg) -->
-      <div class="lg:hidden flex border-b border-gray-200 dark:border-gray-700 shrink-0">
+      <div class="lg:hidden flex border-b border-[var(--wd-border)] shrink-0">
         <button
           :class="[
             'flex-1 py-2.5 text-sm font-medium text-center transition-colors',
             activeTab === 'chat'
-              ? 'text-amber-600 border-b-2 border-amber-500'
-              : 'text-gray-500 hover:text-gray-700',
+              ? 'text-[var(--wd-teal)] border-b-2 border-[var(--wd-teal)]'
+              : 'text-[var(--wd-ink-3)] hover:text-[var(--wd-ink-2)]',
           ]"
           @click="activeTab = 'chat'"
         >
@@ -144,8 +144,8 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
           :class="[
             'flex-1 py-2.5 text-sm font-medium text-center transition-colors',
             activeTab === 'itinerary'
-              ? 'text-amber-600 border-b-2 border-amber-500'
-              : 'text-gray-500 hover:text-gray-700',
+              ? 'text-[var(--wd-teal)] border-b-2 border-[var(--wd-teal)]'
+              : 'text-[var(--wd-ink-3)] hover:text-[var(--wd-ink-2)]',
           ]"
           @click="activeTab = 'itinerary'"
         >
@@ -159,7 +159,7 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
         <!-- Chat panel -->
         <div
           :class="[
-            'lg:w-1/2 lg:border-r lg:border-gray-200 lg:dark:border-gray-700',
+            'lg:w-1/2 lg:border-r lg:border-[var(--wd-border)]',
             activeTab === 'chat' ? 'flex-1 lg:flex-none' : 'hidden lg:block',
           ]"
         >
@@ -190,3 +190,16 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
     </template>
   </div>
 </template>
+
+<style scoped>
+.session-shell {
+  background: var(--wd-surface);
+  color: var(--wd-ink);
+}
+
+.session-header {
+  border-bottom: 1px solid var(--wd-border);
+  background: rgba(12, 12, 14, 0.82);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+</style>

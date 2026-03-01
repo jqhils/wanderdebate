@@ -80,8 +80,15 @@ async function handlePlan() {
 </script>
 
 <template>
-  <div class="max-w-md mx-auto">
-    <UCard class="shadow-xl">
+  <div class="w-full">
+    <UCard
+      class="shadow-xl bg-slate-950/70 backdrop-blur-sm ring-1 ring-white/10"
+      :ui="{
+        header: 'p-6 border-b border-white/10',
+        body: 'p-6',
+        footer: 'p-6 border-t border-white/10',
+      }"
+    >
       <template #header>
         <div class="text-center">
           <UIcon name="i-lucide-compass" class="size-10 text-amber-500 mb-2" />

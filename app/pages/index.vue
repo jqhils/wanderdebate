@@ -391,9 +391,7 @@ watch(() => user.value?.id, () => {
             </div>
 
             <div class="lp-dash__grid">
-              <div class="lp-dash__card">
-                <SetupTripForm />
-              </div>
+              <SetupTripForm />
 
               <div class="lp-dash__card">
                 <div class="flex items-center justify-between mb-4">
@@ -464,15 +462,15 @@ watch(() => user.value?.id, () => {
    FOUNDATION
    ────────────────────────────────────────────── */
 .lp {
-  --ink: #f1f0ec;
-  --ink-2: #a8a5a0;
-  --ink-3: #6b6762;
-  --surface: #0c0c0e;
-  --surface-raised: #151518;
-  --surface-card: #1a1a1e;
-  --border: rgba(255, 255, 255, 0.07);
-  --teal: #2dd4bf;
-  --amber: #f59e0b;
+  --ink: var(--wd-ink);
+  --ink-2: var(--wd-ink-2);
+  --ink-3: var(--wd-ink-3);
+  --surface: var(--wd-surface);
+  --surface-raised: var(--wd-surface-raised);
+  --surface-card: var(--wd-surface-card);
+  --border: var(--wd-border);
+  --teal: var(--wd-teal);
+  --amber: var(--wd-amber);
   --teal-dim: rgba(45, 212, 191, 0.12);
   --amber-dim: rgba(245, 158, 11, 0.12);
 

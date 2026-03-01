@@ -25,7 +25,7 @@ function next() {
 </script>
 
 <template>
-  <div class="flex items-center justify-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+  <div class="flex items-center justify-center gap-2 px-4 py-3 border-b border-[var(--wd-border)]">
     <UButton
       icon="i-lucide-chevron-left"
       variant="ghost"
@@ -42,7 +42,7 @@ function next() {
           'size-3 rounded-full transition-all',
           getAgentConfig(version.agentId).dotClass,
           idx === currentIndex
-            ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-125'
+            ? 'ring-2 ring-offset-2 ring-offset-[var(--wd-surface)] scale-125'
             : 'opacity-40 hover:opacity-70',
         ]"
         :style="idx === currentIndex ? `--tw-ring-color: var(--color-${getAgentConfig(version.agentId).color}-500)` : ''"
@@ -59,7 +59,7 @@ function next() {
       @click="next"
     />
 
-    <span class="ml-2 text-xs text-gray-500">
+    <span class="ml-2 text-xs text-[var(--wd-ink-3)]">
       v{{ versions[currentIndex]?.versionNumber }}
     </span>
   </div>
