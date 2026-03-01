@@ -95,7 +95,7 @@ const emoji: Record<string, string> = {
 
 <template>
   <div class="h-full relative">
-    <ItineraryMap ref="mapRef" :versions="store.versions" :current-index="store.currentVersionIndex" class="h-full w-full" />
+    <ItineraryMap ref="mapRef" :versions="store.versions" :current-index="store.currentVersionIndex" :selected-day="selectedDay" class="h-full w-full" />
 
     <button
       class="absolute top-4 left-4 z-[1000] bg-gray-900/80 backdrop-blur text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-800 transition-colors border border-gray-700/50"

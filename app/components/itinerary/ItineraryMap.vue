@@ -3,6 +3,7 @@ import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 
 const props = defineProps<{
   versions: any[]
+  selectedDay?: number
   currentIndex: number
 }>()
 
@@ -213,6 +214,7 @@ defineExpose({ flyToActivity })
 
 onMounted(async () => { await nextTick(); initMap() })
 watch(() => props.currentIndex, () => renderMarkers())
+watch(() => props.selectedDay, () => renderMarkers())
 watch(() => props.versions.length, () => renderMarkers())
 onUnmounted(() => { if (map) { map.remove(); map = null } })
 </script>
