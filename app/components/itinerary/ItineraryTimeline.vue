@@ -43,8 +43,8 @@ function extractCost(activity: any): string | null {
             v-if="idx > 0 && activity.category !== 'transit' && day.activities[idx-1]?.category !== 'transit'"
             class="relative pl-8 py-1"
           >
-            <div class="absolute left-3 top-0 bottom-0 w-px border-l-2 border-dotted border-gray-600" />
-            <div class="flex items-center gap-2 text-[11px] text-gray-500 py-1">
+            <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-amber-500/40" />
+            <div class="flex items-center gap-2 text-[12px] text-amber-400 font-semibold py-1">
               <span>🚶</span>
               <span v-if="walkingMinutes(day.activities[idx-1], activity) !== null">
                 {{ walkingMinutes(day.activities[idx-1], activity) }} min walk
@@ -59,7 +59,7 @@ function extractCost(activity: any): string | null {
             v-if="activity.category === 'transit'"
             class="relative pl-8 py-1"
           >
-            <div class="absolute left-3 top-0 bottom-0 w-px border-l-2 border-dotted border-blue-500/30" />
+            <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-blue-400/50" />
             <div class="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
               <span class="text-sm mt-0.5">🚃</span>
               <div class="min-w-0 flex-1">

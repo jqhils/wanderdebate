@@ -76,7 +76,7 @@ const timestamp = computed(() => {
           <div
             v-for="(action, i) in parsedActions"
             :key="i"
-            :class="['flex items-start gap-2 py-1.5', action.type === 'KEPT' ? 'opacity-50' : '']"
+            :class="['flex items-start gap-2 py-1.5', '']"
           >
             <span
               v-if="action.type === 'KEPT'"
@@ -90,7 +90,7 @@ const timestamp = computed(() => {
             <span
               v-else
               class="text-[10px] text-blue-400 font-bold mt-0.5 shrink-0">↻</span>
-            <p :class="['text-[13px] leading-snug', action.type === 'KEPT' ? 'text-gray-500' : 'text-gray-300']">
+            <p :class="['text-[13px] leading-snug', action.type === 'KEPT' ? 'text-gray-400' : 'text-gray-200']">
               {{ action.text }}
             </p>
           </div>

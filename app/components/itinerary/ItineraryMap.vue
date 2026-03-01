@@ -75,7 +75,7 @@ function renderMarkers() {
 
   const allPoints: [number, number][] = []
   let activityIndex = 0
-  const dayColors = ['rgba(148,210,189,0.5)', 'rgba(167,175,220,0.5)', 'rgba(210,180,140,0.5)', 'rgba(200,160,190,0.5)'] // orange, purple, cyan, pink per day
+  const dayColors = ['#4ECDC4', '#4ECDC4', '#4ECDC4', '#4ECDC4'] // orange, purple, cyan, pink per day
 
   for (const day of version.days) {
     const dayColor = dayColors[(day.dayNumber - 1) % dayColors.length]
