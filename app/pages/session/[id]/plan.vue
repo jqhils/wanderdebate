@@ -4,6 +4,18 @@ import { useDebateStore } from '~/stores/debate'
 definePageMeta({ layout: 'session' })
 
 const store = useDebateStore()
+const collapsedDays = ref(new Set<number>())
+
+function toggleDay(dayNum: number) {
+  if (collapsedDays.value.has(dayNum)) {
+    collapsedDays.value.delete(dayNum)
+  } else {
+    collapsedDays.value.add(dayNum)
+  }
+}
+
+const days = computed(() => currentVersion.value?.days ?? [])
+
 const currentVersion = computed(() => store.versions[store.currentVersionIndex])
 const activities = computed(() => currentVersion.value?.days?.flatMap((d: any) => d.activities ?? []) ?? [])
 
@@ -111,68 +123,91 @@ function ticketLabel(activity: any): string {
         </p>
       </div>
 
-
-
-      <div class="relative">
-        <div class="absolute left-6 top-0 bottom-0 w-px bg-gray-800" />
-
-        <div v-for="activity in activities" :key="activity.id" class="relative mb-2">
-          <div v-if="activity.category === 'transit'" class="ml-14 py-3">
-            <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
-              <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
-                <span class="text-sm">🚃</span>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-blue-300">{{ activity.title }}</p>
-                <p class="text-xs text-gray-500 mt-0.5">{{ activity.timeBlock }}</p>
-                <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ activity.description }}</p>
-              </div>
-              <div v-if="parseCost(activity)" class="text-xs text-blue-400 font-medium shrink-0">{{ parseCost(activity) }}</div>
-            </div>
-            <div class="absolute left-4 top-5 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
-              <div class="w-2 h-2 rounded-full bg-blue-400" />
-            </div>
+      <!-- Day sections -->
+      <div v-for="day in days" :key="day.dayNumber" class="mb-8">
+        <!-- Day header (only show for multi-day) -->
+        <button
+          v-if="days.length > 1"
+          class="flex items-center gap-3 mb-4 w-full text-left group"
+          @click="toggleDay(day.dayNumber)"
+        >
+          <div class="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+            <span class="text-sm font-bold text-amber-400">{{ day.dayNumber }}</span>
           </div>
+          <div class="flex-1">
+            <h2 class="text-base font-semibold text-white">Day {{ day.dayNumber }}</h2>
+            <p v-if="day.theme" class="text-xs text-gray-500">{{ day.theme }}</p>
+          </div>
+          <span class="text-gray-500 group-hover:text-white transition-colors text-sm">
+            {{ collapsedDays.has(day.dayNumber) ? '▶' : '▼' }}
+          </span>
+        </button>
 
-          <div v-else class="ml-14 py-2">
-            <div class="rounded-xl bg-gray-900 border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors">
-              <div v-if="photoUrl(activity)" class="aspect-[16/9] overflow-hidden">
-                <img :src="photoUrl(activity)!" :alt="activity.title" class="w-full h-full object-cover object-center" loading="lazy"
-                  @error="($event.target as HTMLImageElement).parentElement!.style.display = 'none'" />
+        <!-- Activities for this day -->
+        <div v-show="!collapsedDays.has(day.dayNumber)" class="relative">
+          <div class="absolute left-6 top-0 bottom-0 w-px bg-gray-800" />
+
+          <div v-for="activity in day.activities" :key="activity.id" class="relative mb-2">
+            <!-- Transit card -->
+            <div v-if="activity.category === 'transit'" class="ml-14 py-3">
+              <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                  <span class="text-sm">🚃</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-blue-300">{{ activity.title }}</p>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ activity.timeBlock }}</p>
+                  <p class="text-xs text-gray-400 mt-1 leading-relaxed">{{ activity.description }}</p>
+                </div>
+                <div v-if="parseCost(activity)" class="text-xs text-blue-400 font-medium shrink-0">{{ parseCost(activity) }}</div>
               </div>
-              <div class="p-4">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-xs text-gray-500 font-mono">{{ activity.timeBlock }}</span>
-                  <span class="text-sm">{{ categoryIcon[activity.category] ?? '📍' }}</span>
-                  <span :class="['px-2 py-0.5 text-[10px] rounded-full font-medium', statusBadge(activity).color]">{{ statusBadge(activity).text }}</span>
-                </div>
-                <h3 class="text-base font-semibold text-white mb-1">{{ activity.title }}</h3>
-                <p class="text-xs text-gray-500 mb-2">{{ activity.location }}</p>
-                <div v-if="activity.groundingData?.rating" class="flex items-center gap-2 mb-3">
-                  <span class="text-xs text-amber-400">⭐ {{ activity.groundingData.rating }}</span>
-                  <span v-if="activity.groundingData.totalRatings" class="text-xs text-gray-600">({{ activity.groundingData.totalRatings.toLocaleString() }})</span>
-                </div>
-                <p class="text-xs text-gray-400 leading-relaxed mb-3">{{ activity.description }}</p>
-                <div v-if="parseCost(activity)" class="mb-3">
-                  <span class="text-xs text-amber-400 font-medium">{{ parseCost(activity) }}</span>
-                </div>
-                <div class="flex gap-2">
-                  <a :href="mapsLink(activity)" target="_blank" class="px-3 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors inline-flex items-center gap-1">
-                    <UIcon name="i-lucide-map-pin" class="size-3" /> Open in Maps
-                  </a>
-                  <a v-if="needsTicket(activity)" :href="ticketSearchUrl(activity)" target="_blank" class="px-3 py-1.5 text-xs rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors inline-flex items-center gap-1">
-                    🎟️ Find tickets
-                  </a>
-                </div>
+              <div class="absolute left-4 top-5 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-blue-400" />
               </div>
             </div>
-            <div class="absolute left-4 top-6 w-5 h-5 rounded-full border-2 border-gray-800 bg-gray-950 flex items-center justify-center">
-              <div :class="['w-2.5 h-2.5 rounded-full', activity.groundingStatus === 'verified' ? 'bg-green-500' : activity.groundingStatus === 'replaced' ? 'bg-amber-500' : 'bg-gray-600']" />
+
+            <!-- Activity card -->
+            <div v-else class="ml-14 py-2">
+              <div class="rounded-xl bg-gray-900 border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors">
+                <div v-if="photoUrl(activity)" class="h-56 overflow-hidden">
+                  <img :src="photoUrl(activity)!" :alt="activity.title" class="w-full h-full object-cover object-center" loading="lazy"
+                    @error="($event.target as HTMLImageElement).parentElement!.style.display = 'none'" />
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs text-gray-500 font-mono">{{ activity.timeBlock }}</span>
+                    <span class="text-sm">{{ categoryIcon[activity.category] ?? '📍' }}</span>
+                    <span :class="['px-2 py-0.5 text-[10px] rounded-full font-medium', statusBadge(activity).color]">{{ statusBadge(activity).text }}</span>
+                  </div>
+                  <h3 class="text-base font-semibold text-white mb-1">{{ activity.title }}</h3>
+                  <p class="text-xs text-gray-500 mb-2">{{ activity.location }}</p>
+                  <div v-if="activity.groundingData?.rating" class="flex items-center gap-2 mb-3">
+                    <span class="text-xs text-amber-400">⭐ {{ activity.groundingData.rating }}</span>
+                    <span v-if="activity.groundingData.totalRatings" class="text-xs text-gray-600">({{ activity.groundingData.totalRatings.toLocaleString() }})</span>
+                  </div>
+                  <p class="text-xs text-gray-400 leading-relaxed mb-3">{{ activity.description }}</p>
+                  <div v-if="parseCost(activity)" class="mb-3">
+                    <span class="text-xs text-amber-400 font-medium">{{ parseCost(activity) }}</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <a :href="mapsLink(activity)" target="_blank" class="px-3 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-map-pin" class="size-3" /> Open in Maps
+                    </a>
+                    <a v-if="needsTicket(activity)" :href="ticketSearchUrl(activity)" target="_blank" class="px-3 py-1.5 text-xs rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors inline-flex items-center gap-1">
+                      {{ ticketLabel(activity) }}
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div class="absolute left-4 top-6 w-5 h-5 rounded-full border-2 border-gray-800 bg-gray-950 flex items-center justify-center">
+                <div :class="['w-2.5 h-2.5 rounded-full', activity.groundingStatus === 'verified' ? 'bg-green-500' : activity.groundingStatus === 'replaced' ? 'bg-amber-500' : 'bg-gray-600']" />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Accommodation -->
       <div class="mt-8 p-5 rounded-xl bg-gray-900 border border-gray-800">
         <h3 class="text-sm font-semibold text-white mb-2">🏨 Where to stay</h3>
         <p class="text-xs text-gray-500 mb-3">Based on your itinerary, we recommend staying near <span class="text-amber-400">{{ nearestNeighborhood }}</span>.</p>
