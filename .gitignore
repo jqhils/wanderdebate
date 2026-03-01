@@ -37,3 +37,4 @@ pnpm-debug.log*
 # Supabase local runtime artifacts
 supabase/.temp/
 supabase/.branches/
+TravelPlanner/
