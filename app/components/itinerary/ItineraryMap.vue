@@ -34,6 +34,8 @@ function getPhotoUrl(activity: any): string | null {
 async function initMap() {
   if (!mapContainer.value || map) return
   L = await import('leaflet')
+  const config = useRuntimeConfig()
+  const stadiaApiKey = String(config.public?.stadiaMapsApiKey ?? '').trim()
 
   delete (L.Icon.Default.prototype as any)._getIconUrl
   L.Icon.Default.mergeOptions({
@@ -47,14 +49,32 @@ async function initMap() {
     attributionControl: false,
   }).setView([35.6762, 139.6503], 12)
 
-  // Stadia Alidade Smooth Dark — much prettier than CARTO
-  L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-  }).addTo(map)
+  // Use Stadia when an API key is configured; otherwise fall back to CARTO dark tiles.
+  const usingStadia = stadiaApiKey.length > 0
+  const tileUrl = usingStadia
+    ? `https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${encodeURIComponent(stadiaApiKey)}`
+    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+
+  const tileOptions = usingStadia
+    ? { maxZoom: 20 }
+    : { maxZoom: 20, subdomains: 'abcd' as const }
+
+  L.tileLayer(tileUrl, tileOptions).addTo(map)
 
   // Minimal attribution bottom-right
-  L.control.attribution({ position: 'bottomright', prefix: false })
-    .addAttribution('© <a href="https://stadiamaps.com/">Stadia</a> · © <a href="https://openmaptiles.org/">OpenMapTiles</a>')
+  const attribution = L.control.attribution({ position: 'bottomright', prefix: false })
+  if (usingStadia) {
+    attribution
+      .addAttribution('© <a href="https://stadiamaps.com/">Stadia</a> · © <a href="https://openmaptiles.org/">OpenMapTiles</a>')
+      .addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')
+  }
+  else {
+    attribution
+      .addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')
+      .addAttribution('© <a href="https://carto.com/attributions">CARTO</a>')
+  }
+
+  attribution
     .addTo(map)
 
   L.control.zoom({ position: 'topright' }).addTo(map)
