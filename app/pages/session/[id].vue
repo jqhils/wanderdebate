@@ -63,6 +63,13 @@ function handleContinueDebate() {
   continueDebate()
 }
 
+function handleSelectVersionFromMessage(versionId: string) {
+  const index = store.versions.findIndex(version => version.id === versionId)
+  if (index < 0) return
+  store.setCurrentVersion(index)
+  activeTab.value = 'itinerary'
+}
+
 const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
   if (!store.session) return 'neutral'
   const map: Record<string, 'neutral' | 'warning' | 'info' | 'success'> = {
@@ -159,8 +166,10 @@ const statusColor = computed((): 'neutral' | 'warning' | 'info' | 'success' => {
           <ChatPanel
             :messages="store.messagesForDisplay"
             :is-debating="store.isDebating"
+            :selected-version-id="store.currentVersion?.id ?? null"
             @send="handleSend"
             @continue-debate="handleContinueDebate"
+            @select-version="handleSelectVersionFromMessage"
           />
         </div>
 

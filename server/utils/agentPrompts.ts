@@ -176,6 +176,6 @@ export async function fetchUserConstraints(
   }
 
   return (data ?? [])
-    .map(row => String(row.content ?? '').trim())
+    .map((row: { content?: unknown }) => String(row.content ?? '').trim())
     .filter(Boolean)
 }

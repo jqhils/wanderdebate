@@ -5,11 +5,23 @@ import { renderMarkdown } from '~/utils/markdown'
 
 const props = defineProps<{
   message: ChatMessage
+  selectedVersionId?: string | null
+}>()
+
+const emit = defineEmits<{
+  selectVersion: [versionId: string]
 }>()
 
 const config = computed(() => getAgentConfig(props.message.agentId))
 const isUser = computed(() => props.message.agentId === 'user')
 const renderedContent = computed(() => renderMarkdown(props.message.content))
+const isLinkedToVersion = computed(() => Boolean(props.message.relatedVersionId))
+const isSelectable = computed(() => !isUser.value && isLinkedToVersion.value)
+const isSelected = computed(() =>
+  isSelectable.value
+  && Boolean(props.selectedVersionId)
+  && props.message.relatedVersionId === props.selectedVersionId,
+)
 
 const roleBadge = computed(() => {
   const map: Record<string, string> = {
@@ -26,6 +38,25 @@ const timestamp = computed(() => {
   const d = new Date(props.message.createdAt)
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 })
+
+function selectVersion(event?: MouseEvent | KeyboardEvent) {
+  if (!isSelectable.value || !props.message.relatedVersionId) return
+
+  if (event && 'target' in event) {
+    const target = event.target as HTMLElement | null
+    if (target?.closest('a')) {
+      return
+    }
+  }
+
+  emit('selectVersion', props.message.relatedVersionId)
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  selectVersion(event)
+}
 </script>
 
 <template>
@@ -33,7 +64,12 @@ const timestamp = computed(() => {
     :class="[
       'flex gap-3 max-w-[85%]',
       isUser ? 'ml-auto flex-row-reverse' : '',
+      isSelectable ? 'cursor-pointer' : '',
     ]"
+    :role="isSelectable ? 'button' : undefined"
+    :tabindex="isSelectable ? 0 : undefined"
+    @click="selectVersion"
+    @keydown="handleKeydown"
   >
     <ChatAgentAvatar :agent-id="message.agentId" />
     <div class="flex flex-col gap-1 min-w-0">
@@ -56,6 +92,8 @@ const timestamp = computed(() => {
           isUser
             ? 'bg-amber-500 text-white rounded-tr-sm'
             : `${config.bgClass} border ${config.borderClass} rounded-tl-sm`,
+          isSelectable ? 'transition-all hover:ring-1 hover:ring-amber-400/50' : '',
+          isSelected ? 'ring-2 ring-amber-400' : '',
         ]"
       >
         <!-- eslint-disable vue/no-v-html -->

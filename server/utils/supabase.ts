@@ -5,7 +5,7 @@ import type { H3Event } from 'h3'
  * Get a Supabase client with service role privileges for server-side operations.
  * Throws a clear error if Supabase env vars are not configured.
  */
-export function useServerSupabase(event: H3Event) {
+export function useServerSupabase(event: H3Event): any {
   const config = useRuntimeConfig(event)
   const supabaseUrl
     = (config.public as Record<string, unknown>)?.supabase && typeof (config.public as { supabase?: { url?: unknown } }).supabase?.url === 'string'
@@ -40,7 +40,8 @@ export function useServerSupabase(event: H3Event) {
     })
   }
 
-  return serverSupabaseServiceRole(event)
+  // Database types are not generated in this repo yet, so return an untyped client.
+  return serverSupabaseServiceRole(event) as any
 }
 
 /**

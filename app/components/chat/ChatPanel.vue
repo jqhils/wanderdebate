@@ -5,11 +5,13 @@ import type { ChatMessage } from '~/utils/schemas'
 const props = defineProps<{
   messages: ChatMessage[]
   isDebating?: boolean
+  selectedVersionId?: string | null
 }>()
 
 const emit = defineEmits<{
   send: [message: string]
   continueDebate: []
+  selectVersion: [versionId: string]
 }>()
 
 const messagesContainer = useTemplateRef('messagesContainer')
@@ -65,6 +67,8 @@ onMounted(scrollToBottom)
         v-for="msg in messages"
         :key="msg.id"
         :message="msg"
+        :selected-version-id="selectedVersionId ?? null"
+        @select-version="emit('selectVersion', $event)"
       />
 
       <!-- Typing indicator when debating -->
