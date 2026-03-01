@@ -18,23 +18,23 @@ type VersionPayload = {
 
 const OUTPUT_CONTRACT = `Respond with ONLY one \`\`\`json code block that matches this shape exactly:
 {
-  "commentary": "string",
+  "commentary": "string — summarize your changes using the KEPT/CHANGED/DROPPED/ADDED structure when critiquing",
   "days": [
     {
       "dayNumber": 1,
-      "theme": "optional string",
+      "theme": "REQUIRED: a short evocative theme for this day",
       "activities": [
         {
           "id": "optional string UUID",
-          "timeBlock": "string",
-          "title": "string",
-          "description": "string",
-          "location": "string",
+          "timeBlock": "HH:MM - HH:MM format",
+          "title": "string — must be a real place name or a generic description if unsure",
+          "description": "string — practical visitor tips, not generic filler",
+          "location": "string — neighborhood or specific address",
           "coordinates": { "lat": 0, "lng": 0 },
           "durationMinutes": 60,
           "category": "landmark|food|culture|nature|nightlife|transit|free-roam",
           "agentOrigin": "flaneur|completionist|master",
-          "agentLogic": "string"
+          "agentLogic": "REQUIRED: why this activity, why this time, why this location. For transit activities, MUST include: specific train/metro line name, departure station, arrival station, approximate cost, and which exit to use if relevant. Example: Take the JR Yamanote Line from Shibuya Station (Hachiko Exit) to Ueno Station. ~¥200, 25 min."
         }
       ]
     }
@@ -102,6 +102,9 @@ export function buildProposePrompt(
     `Create a full itinerary proposal for ${destination}.`,
     `Trip duration: ${durationHours} hours (${numDays} day${numDays === 1 ? '' : 's'}).`,
     'Plan all days with coherent pacing and realistic transitions.',
+    'IMPORTANT: Each day MUST have a theme. Only recommend real, verifiable places.',
+    'For any transit between districts, add a transit activity with category "transit" that specifies: train/metro line name, departure station, arrival station, approximate cost in local currency, and travel time.',
+    'CRITICAL: Activities MUST follow a geographically logical order — cluster nearby activities together and move through neighborhoods sequentially. Do NOT zigzag back and forth across the city. Check venue closing times and schedule accordingly (e.g. shrines/temples close at sunset, observation decks are best at golden hour).',
     'User constraints:',
     formatConstraints(userConstraints),
     OUTPUT_CONTRACT,
@@ -122,6 +125,7 @@ export function buildMergePrompt(
     'Turn type: merge.',
     `Merge two itinerary proposals for ${destination}.`,
     `Trip duration: ${durationHours} hours.`,
+    'IMPORTANT: Maintain geographic coherence per half-day. Do not zigzag across the city.',
     'User constraints:',
     formatConstraints(userConstraints),
     'Flaneur proposal JSON:',
@@ -139,12 +143,20 @@ export function buildCritiquePrompt(
   durationHours: number,
   userConstraints: string[],
 ): string {
+  const agentLabel = agentId === 'flaneur' ? 'The Flâneur' : 'The Completionist'
+  const otherAgent = agentId === 'flaneur' ? 'The Completionist' : 'The Flâneur'
   const currentJson = JSON.stringify(compactVersionForPrompt(currentVersion))
 
   return [
     `Turn type: critique (${agentId}).`,
-    `Critique and improve the current itinerary for ${destination}.`,
+    `You are ${agentLabel}. Critique and improve the current itinerary for ${destination}.`,
     `Trip duration: ${durationHours} hours.`,
+    '',
+    'MANDATORY: You must change at least 3 activities to justify your critique. Do not approve the itinerary as-is.',
+    `Preserve ${otherAgent}'s activities where they genuinely serve the trip, but push for your philosophy where it matters.`,
+    '',
+    'Structure your commentary using: KEPT / CHANGED / DROPPED / ADDED sections.',
+    '',
     'User constraints:',
     formatConstraints(userConstraints),
     'Current itinerary JSON:',

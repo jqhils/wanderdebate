@@ -14,6 +14,7 @@ const presetHours = ref(48)
 const customDays = ref(3)
 
 const presets = [
+  { label: '4H', value: 4 },
   { label: '24H', value: 24 },
   { label: '48H', value: 48 },
   { label: '72H', value: 72 },

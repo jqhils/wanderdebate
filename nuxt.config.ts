@@ -21,7 +21,6 @@ export default defineNuxtConfig({
 
   supabase: {
     redirect: false,
-    // Keep compatibility with existing project env naming.
     serviceKey: process.env.SUPABASE_SERVICE_KEY || '',
     secretKey: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   },
@@ -29,12 +28,20 @@ export default defineNuxtConfig({
   runtimeConfig: {
     mistralApiKey: '', // Server-only (from NUXT_MISTRAL_API_KEY)
     minimaxApiKey: '', // Server-only (from NUXT_MINIMAX_API_KEY)
-    minimaxBaseUrl: process.env.NUXT_MINIMAX_BASE_URL || 'https://api.minimax.io/v1', // Server-only
+    minimaxBaseUrl: process.env.NUXT_MINIMAX_BASE_URL || 'https://api.minimax.io/v1',
+    googlePlacesApiKey: '', // Server-only (from GOOGLE_PLACES_API_KEY)
     dailyItineraryLimitEnabled: parseBooleanFlag(process.env.NUXT_DAILY_ITINERARY_LIMIT_ENABLED, true),
     public: {
       supabaseUrl: '',
       supabaseKey: '',
+      googlePlacesApiKey: '',
     },
+  },
+
+  nitro: {
+    handlers: [
+      { route: '/api/debate/ground', handler: '../server/api/debate/ground.post.ts', method: 'post' },
+    ],
   },
 
   typescript: {

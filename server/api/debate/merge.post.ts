@@ -1,4 +1,5 @@
 import { z } from 'zod'
+
 import { useServerSupabase, rowToVersion, rowToMessage } from '../../utils/supabase'
 import { requireAuthUser } from '../../utils/auth'
 import {
@@ -21,6 +22,7 @@ const MergeBody = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  console.log("[Merge] Starting merge")
   const body = await readValidatedBody(event, MergeBody.parse)
   const client = useServerSupabase(event)
   const user = await requireAuthUser(event)
@@ -122,7 +124,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: versionRow, error: versionError } = await client
     .from('itinerary_versions')
-    .insert({
+    .upsert({
       session_id: body.sessionId,
       version_number: body.versionNumber,
       agent_id: 'master',

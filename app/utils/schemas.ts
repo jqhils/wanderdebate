@@ -33,6 +33,21 @@ export const ActivitySchema = z.object({
   ]),
   agentOrigin: AgentId,
   agentLogic: z.string(),
+  groundingStatus: z
+    .enum(['verified', 'replaced', 'unresolved', 'unverified'])
+    .optional(),
+  groundingData: z
+    .object({
+      originalTitle: z.string().optional(),
+      rating: z.number().optional(),
+      totalRatings: z.number().int().nonnegative().optional(),
+      address: z.string().optional(),
+      placeId: z.string().optional(),
+      photoReference: z.string().optional(),
+      websiteUri: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
 })
 export type Activity = z.infer<typeof ActivitySchema>
 

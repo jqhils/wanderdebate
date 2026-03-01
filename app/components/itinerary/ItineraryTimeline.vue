@@ -4,6 +4,24 @@ import type { DayPlan } from '~/utils/schemas'
 defineProps<{
   days: DayPlan[]
 }>()
+
+function walkingMinutes(a: any, b: any): number | null {
+  const c1 = a.coordinates
+  const c2 = b.coordinates
+  if (!c1?.lat || !c1?.lng || !c2?.lat || !c2?.lng) return null
+  // Haversine-ish rough distance in meters
+  const dist = Math.sqrt(
+    Math.pow((c2.lat - c1.lat) * 111000, 2) +
+    Math.pow((c2.lng - c1.lng) * 91000 * Math.cos(c1.lat * Math.PI / 180), 2)
+  )
+  return Math.round(dist / 80) // ~80m/min walking
+}
+
+function extractCost(activity: any): string | null {
+  const text = (activity.description ?? '') + ' ' + (activity.agentLogic ?? '')
+  const match = text.match(/[¥￥][\d,]+/)
+  return match?.[0] ?? null
+}
 </script>
 
 <template>
@@ -18,13 +36,51 @@ defineProps<{
           — {{ day.theme }}
         </span>
       </div>
-
       <div class="ml-1">
-        <ItineraryActivityCard
-          v-for="activity in day.activities"
-          :key="activity.id"
-          :activity="activity"
-        />
+        <template v-for="(activity, idx) in day.activities" :key="activity.id">
+          <!-- Connector: how you get from previous activity to this one -->
+          <div
+            v-if="idx > 0 && activity.category !== 'transit' && day.activities[idx-1]?.category !== 'transit'"
+            class="relative pl-8 py-1"
+          >
+            <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-amber-500/40" />
+            <div class="flex items-center gap-2 text-[12px] text-amber-400 font-semibold py-1">
+              <span>🚶</span>
+              <span v-if="walkingMinutes(day.activities[idx-1], activity) !== null">
+                {{ walkingMinutes(day.activities[idx-1], activity) }} min walk
+              </span>
+              <span v-else>Walk</span>
+              <span class="flex-1 border-b border-dotted border-gray-700" />
+            </div>
+          </div>
+
+          <!-- Transit connector (when the activity IS transit) -->
+          <div
+            v-if="activity.category === 'transit'"
+            class="relative pl-8 py-1"
+          >
+            <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-blue-400/50" />
+            <div class="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <span class="text-sm mt-0.5">🚃</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-medium text-blue-300">{{ activity.title }}</p>
+                <div class="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
+                  <span>{{ activity.timeBlock }}</span>
+                  <span v-if="extractCost(activity)" class="text-blue-400 font-medium">
+                    {{ extractCost(activity) }}
+                  </span>
+                </div>
+                <p v-if="activity.description" class="text-[11px] text-gray-400 leading-relaxed mt-1.5">{{ activity.description }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Regular activity card (skip transit, handled above) -->
+          <ItineraryActivityCard
+            v-if="activity.category !== 'transit'"
+            :activity="activity"
+          />
+        </template>
       </div>
     </div>
   </div>
