@@ -35,6 +35,7 @@ export default defineNuxtConfig({
       supabaseUrl: '',
       supabaseKey: '',
       googlePlacesApiKey: '',
+      stadiaMapsApiKey: process.env.NUXT_PUBLIC_STADIA_MAPS_API_KEY || '',
     },
   },
 
