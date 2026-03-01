@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
       tag: `merge:v${body.versionNumber}`,
       provider,
       model: provider === 'minimax' ? MINIMAX_MODEL : QUALITY_MODEL,
-      maxTokens: provider === 'minimax' ? 4200 : 2600,
+      maxTokens: 8000,
       maxRetries: provider === 'minimax' ? 1 : 2,
     },
   )

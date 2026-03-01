@@ -52,13 +52,6 @@ const chips = ['More local food', 'Less walking', 'Add photo ops', 'Skip bars', 
         @continue-debate="continueDebate"
         @select-version="handleSelectVersionFromMessage"
       />
-      <div  class="px-4 pb-3 flex flex-wrap gap-2 shrink-0 border-t border-gray-800 pt-3">
-        <button v-for="chip in chips" :key="chip"
-          class="px-3 py-1.5 text-xs rounded-full border border-gray-700 text-gray-400 hover:text-amber-400 hover:border-amber-500/50 transition-colors"
-          @click="handleSend(chip)">
-          {{ chip }}
-        </button>
-      </div>
     </div>
     <div class="hidden lg:flex lg:w-1/2 min-h-0">
       <ItineraryPanel

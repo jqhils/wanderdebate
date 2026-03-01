@@ -6,7 +6,7 @@ import { AgentId, type DayPlan, type LlmProvider } from '../../app/utils/schemas
 export const QUALITY_MODEL = 'mistral-large-latest'
 export const MINIMAX_MODEL = 'MiniMax-M2.5'
 const DEFAULT_MODEL = QUALITY_MODEL
-const DEFAULT_MAX_TOKENS = 2200
+const DEFAULT_MAX_TOKENS = 8000
 const MAX_RETRIES = 2
 
 let _client: Mistral | null = null

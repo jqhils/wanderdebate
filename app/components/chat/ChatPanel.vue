@@ -122,7 +122,7 @@ onMounted(scrollToBottom)
       </div>
     </div>
 
-    <ChatInput @send="(m: string) => emit('send', m)" />
+    <ChatInput :chips="['More local food', 'Less walking', 'Add photo ops', 'Skip bars', 'More free time', 'Kid-friendly', 'Budget-conscious', 'Hidden gems only']" @send="(m: string) => emit('send', m)" />
   </div>
 </template>
 

@@ -16,11 +16,16 @@ const TURN_SEQUENCE: Turn[] = [
 export function useOrchestrator() {
   const store = useDebateStore()
   const currentTurnIndex = ref(0)
+  const roundOffset = ref(0)
   const abortController = ref<AbortController | null>(null)
   const running = ref(false)
 
+  function versionNumber(turnIndex: number): number {
+    return roundOffset.value + turnIndex
+  }
+
   function hasVersionForTurn(turnIndex: number): boolean {
-    return store.versions.some(v => v.versionNumber === turnIndex)
+    return store.versions.some(v => v.versionNumber === versionNumber(turnIndex))
   }
 
   async function executeTurn(turnIndex: number): Promise<boolean> {
@@ -31,7 +36,7 @@ export function useOrchestrator() {
     if (!sessionId) return false
 
     if (hasVersionForTurn(turnIndex)) {
-      console.info(`[Orchestrator] Turn ${turnIndex} already exists, skipping`)
+      console.info(`[Orchestrator] Turn ${turnIndex} (v${versionNumber(turnIndex)}) already exists, skipping`)
       return true
     }
 
@@ -40,7 +45,7 @@ export function useOrchestrator() {
       const endpoint = `/api/debate/${turn.type}`
       const body: Record<string, unknown> = {
         sessionId,
-        versionNumber: turnIndex,
+        versionNumber: versionNumber(turnIndex),
       }
 
       if (turn.type === 'propose') {
@@ -64,7 +69,7 @@ export function useOrchestrator() {
       }
 
       const elapsedMs = Math.round(performance.now() - startedAt)
-      console.info(`[Orchestrator] Turn ${turnIndex} (${turn.type}) completed in ${elapsedMs}ms`)
+      console.info(`[Orchestrator] Turn ${turnIndex} (v${versionNumber(turnIndex)}, ${turn.type}) completed in ${elapsedMs}ms`)
       return true
     }
     catch (err) {
@@ -136,7 +141,7 @@ export function useOrchestrator() {
         currentTurnIndex.value = i + 1
       }
 
-      const lastVersion = currentTurnIndex.value - 1
+      const lastVersion = versionNumber(currentTurnIndex.value - 1)
       if (store.session?.id && lastVersion >= 0) {
         $fetch('/api/debate/ground', {
           method: 'POST',
@@ -157,23 +162,30 @@ export function useOrchestrator() {
 
   async function continueDebate() {
     if (store.isDebating) return
+
+    // If current round has remaining turns, resume it
     if (currentTurnIndex.value < TURN_SEQUENCE.length) {
       await startDebate()
       return
     }
 
-    if (store.session) {
-      store.session.status = 'complete'
-    }
+    // Start a new round — bump version offset so new versions don't collide
+    roundOffset.value += TURN_SEQUENCE.length
+    currentTurnIndex.value = 0
 
+    console.info(`[Orchestrator] Starting new round (offset=${roundOffset.value}), user constraints will be included`)
+
+    // Notify user that a new round is starting
     store.addMessage({
       id: crypto.randomUUID(),
       sessionId: store.session?.id ?? '',
       agentId: 'master',
       role: 'system',
-      content: 'The debate has concluded. All agents have had their say. The final itinerary is ready for your review!',
+      content: '🔄 New debate round starting — agents will incorporate your feedback.',
       createdAt: new Date().toISOString(),
     })
+
+    await startDebate()
   }
 
   function stopDebate() {

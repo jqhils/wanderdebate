@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
       tag: `critique:${body.agentId}:v${body.versionNumber}`,
       provider,
       model: provider === 'minimax' ? MINIMAX_MODEL : QUALITY_MODEL,
-      maxTokens: 3200,
+      maxTokens: 8000,
     },
   )
 

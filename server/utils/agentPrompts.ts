@@ -50,12 +50,11 @@ Commentary style requirements:
 
 function formatConstraints(userConstraints: string[]): string {
   if (userConstraints.length === 0) {
-    return 'No explicit user constraints have been provided yet.'
+    return 'No explicit user constraints yet. Follow your philosophy freely.'
   }
-
-  return userConstraints
-    .map((constraint, index) => `${index + 1}. ${constraint}`)
-    .join('\n')
+  return 'MANDATORY USER RULES (violating these is NOT allowed):\n' + userConstraints
+      .map((constraint, index) => `${index + 1}. ${constraint}`)
+      .join('\n')
 }
 
 function compactVersionForPrompt(version: VersionPayload) {
