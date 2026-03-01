@@ -38,7 +38,7 @@ function needsTicket(activity: any): boolean {
   if (/ticket|admission|entry fee|skip.the.line|book.*advance|reserv.*advance/i.test(text)) return true
   // Known ticketed venue types
   const title = (activity.title || '').toLowerCase()
-  if (/museum|gallery|skytree|teamlab|tower.*observation|aquarium|theme.park|disneyland|disney/i.test(title)) return true
+  if (/museum|gallery|skytree|teamlab|tower.*observation|aquarium|theme.park|disneyland|disney|shibuya.sky|sky.tree|observation/i.test(title)) return true
   return false
 }
 

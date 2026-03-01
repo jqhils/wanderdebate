@@ -16,6 +16,12 @@ function walkingMinutes(a: any, b: any): number | null {
   )
   return Math.round(dist / 80) // ~80m/min walking
 }
+
+function extractCost(activity: any): string | null {
+  const text = (activity.description ?? '') + ' ' + (activity.agentLogic ?? '')
+  const match = text.match(/[¥￥][\d,]+/)
+  return match?.[0] ?? null
+}
 </script>
 
 <template>
@@ -54,17 +60,17 @@ function walkingMinutes(a: any, b: any): number | null {
             class="relative pl-8 py-1"
           >
             <div class="absolute left-3 top-0 bottom-0 w-px border-l-2 border-dotted border-blue-500/30" />
-            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <span class="text-sm">🚃</span>
+            <div class="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <span class="text-sm mt-0.5">🚃</span>
               <div class="min-w-0 flex-1">
                 <p class="text-xs font-medium text-blue-300">{{ activity.title }}</p>
                 <div class="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
                   <span>{{ activity.timeBlock }}</span>
-                  <span v-if="(activity.agentLogic ?? '').match(/[¥￥][\d,]+/)" class="text-blue-400 font-medium">
-                    {{ (activity.agentLogic ?? '').match(/[¥￥][\d,]+/)?.[0] }}
+                  <span v-if="extractCost(activity)" class="text-blue-400 font-medium">
+                    {{ extractCost(activity) }}
                   </span>
-                  <span v-if="activity.description" class="truncate">{{ activity.description.slice(0, 60) }}</span>
                 </div>
+                <p v-if="activity.description" class="text-[11px] text-gray-400 leading-relaxed mt-1.5">{{ activity.description }}</p>
               </div>
             </div>
           </div>

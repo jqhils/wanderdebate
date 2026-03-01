@@ -106,6 +106,7 @@ function buildFallbackQuery(
   category: string,
   location: string,
   destination: string,
+  originalTitle: string = '',
 ): string {
   const categoryMap: Record<string, string> = {
     'food': 'restaurant',
@@ -118,7 +119,8 @@ function buildFallbackQuery(
   }
 
   const searchCategory = categoryMap[category] ?? 'attraction'
-  return `${searchCategory} near ${location}, ${destination}`
+  // Use the original title keywords to find a relevant replacement in the same area
+  return `${originalTitle || searchCategory} near ${location}, ${destination}`
 }
 
 /**
@@ -167,6 +169,7 @@ export async function groundItinerary(
           activity.category,
           activity.location,
           destination,
+          activity.title,
         )
         const replacement = await searchPlace(fallbackQuery, apiKey)
 

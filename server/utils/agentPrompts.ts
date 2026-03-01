@@ -34,7 +34,7 @@ const OUTPUT_CONTRACT = `Respond with ONLY one \`\`\`json code block that matche
           "durationMinutes": 60,
           "category": "landmark|food|culture|nature|nightlife|transit|free-roam",
           "agentOrigin": "flaneur|completionist|master",
-          "agentLogic": "REQUIRED: why this activity, why this time, why this location"
+          "agentLogic": "REQUIRED: why this activity, why this time, why this location. For transit activities, MUST include: specific train/metro line name, departure station, arrival station, approximate cost, and which exit to use if relevant. Example: Take the JR Yamanote Line from Shibuya Station (Hachiko Exit) to Ueno Station. ~¥200, 25 min."
         }
       ]
     }
@@ -77,6 +77,8 @@ export function buildProposePrompt(
     `Trip duration: ${durationHours} hours (${numDays} day${numDays === 1 ? '' : 's'}).`,
     'Plan all days with coherent pacing and realistic transitions.',
     'IMPORTANT: Each day MUST have a theme. Only recommend real, verifiable places.',
+    'For any transit between districts, add a transit activity with category "transit" that specifies: train/metro line name, departure station, arrival station, approximate cost in local currency, and travel time.',
+    'CRITICAL: Activities MUST follow a geographically logical order — cluster nearby activities together and move through neighborhoods sequentially. Do NOT zigzag back and forth across the city. Check venue closing times and schedule accordingly (e.g. shrines/temples close at sunset, observation decks are best at golden hour).',
     'User constraints:',
     formatConstraints(userConstraints),
     OUTPUT_CONTRACT,

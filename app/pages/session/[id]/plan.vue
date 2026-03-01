@@ -83,7 +83,7 @@ function needsTicket(activity: any): boolean {
   if (/ticket|admission|entry fee|skip.the.line|book.*advance|reserv.*advance/i.test(text)) return true
   // Known ticketed venue types
   const title = (activity.title || '').toLowerCase()
-  if (/museum|gallery|skytree|teamlab|tower.*observation|aquarium|theme.park|disneyland|disney/i.test(title)) return true
+  if (/museum|gallery|skytree|teamlab|tower.*observation|aquarium|theme.park|disneyland|disney|shibuya.sky|sky.tree|observation/i.test(title)) return true
   return false
 }
 
@@ -111,10 +111,7 @@ function ticketLabel(activity: any): string {
         </p>
       </div>
 
-      <div v-if="estimatedBudget > 0" class="mb-8 p-4 rounded-xl bg-gray-900 border border-gray-800">
-        <p class="text-xs text-gray-500 uppercase tracking-wide">Estimated Budget</p>
-        <p class="text-xl font-bold text-white mt-1">¥{{ estimatedBudget.toLocaleString() }}</p>
-      </div>
+
 
       <div class="relative">
         <div class="absolute left-6 top-0 bottom-0 w-px bg-gray-800" />

@@ -69,14 +69,18 @@ onMounted(scrollToBottom)
 
       <!-- Typing indicator when debating -->
       <div v-if="isDebating" class="flex gap-3 max-w-[85%]">
-        <div class="rounded-full size-9 bg-gray-100 dark:bg-gray-800 flex items-center justify-center animate-pulse">
+        <div class="relative rounded-full size-9 bg-gray-800 flex items-center justify-center">
           <UIcon name="i-lucide-bot" class="size-5 text-gray-400" />
+          <span class="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-green-500 animate-pulse" />
         </div>
-        <div class="rounded-2xl rounded-tl-sm bg-gray-100 dark:bg-gray-800 px-4 py-3">
-          <div class="flex gap-1">
-            <span class="size-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 0ms" />
-            <span class="size-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 150ms" />
-            <span class="size-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 300ms" />
+        <div class="rounded-2xl rounded-tl-sm bg-gray-800 border border-gray-700 px-4 py-3">
+          <div class="flex items-center gap-3">
+            <div class="flex gap-1">
+              <span class="size-2 rounded-full bg-amber-400 animate-bounce" style="animation-delay: 0ms" />
+              <span class="size-2 rounded-full bg-amber-400 animate-bounce" style="animation-delay: 150ms" />
+              <span class="size-2 rounded-full bg-amber-400 animate-bounce" style="animation-delay: 300ms" />
+            </div>
+
           </div>
         </div>
       </div>
