@@ -6,10 +6,11 @@ import { renderMarkdown } from '~/utils/markdown'
 const props = defineProps<{
   message: ChatMessage
   selectedVersionId?: string | null
+  selectedMessageId?: string | null
 }>()
 
 const emit = defineEmits<{
-  selectVersion: [versionId: string]
+  selectVersion: [payload: { versionId: string, messageId: string }]
 }>()
 
 const config = computed(() => getAgentConfig(props.message.agentId))
@@ -19,8 +20,8 @@ const isLinkedToVersion = computed(() => Boolean(props.message.relatedVersionId)
 const isSelectable = computed(() => !isUser.value && isLinkedToVersion.value)
 const isSelected = computed(() =>
   isSelectable.value
-  && Boolean(props.selectedVersionId)
-  && props.message.relatedVersionId === props.selectedVersionId,
+  && Boolean(props.selectedMessageId)
+  && props.message.id === props.selectedMessageId,
 )
 
 const roleBadge = computed(() => {
@@ -49,7 +50,10 @@ function selectVersion(event?: MouseEvent | KeyboardEvent) {
     }
   }
 
-  emit('selectVersion', props.message.relatedVersionId)
+  emit('selectVersion', {
+    versionId: props.message.relatedVersionId,
+    messageId: props.message.id,
+  })
 }
 
 function handleKeydown(event: KeyboardEvent) {

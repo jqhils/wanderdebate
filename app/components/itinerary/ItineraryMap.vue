@@ -156,10 +156,10 @@ function renderMarkers() {
       const cost = costMatch?.[0] ?? ''
 
       const popup = `
-        <div style="max-width:260px;margin:-8px -12px;">
-          ${photo ? `<img src="${photo}" style="width:100%;height:120px;object-fit:cover;border-radius:8px 8px 0 0;margin-bottom:8px;" onerror="this.style.display='none'" />` : ''}
-          <div style="padding:${photo ? '0 12px 8px' : '8px 12px'};">
-            <div style="font-size:14px;font-weight:600;color:#f3f4f6;margin-bottom:4px;">${activityIndex}. ${activity.title}</div>
+        <div style="max-width:260px;">
+          ${photo ? `<img src="${photo}" style="width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px;" onerror="this.style.display='none'" />` : ''}
+          <div style="padding:8px 10px 6px;">
+            <div style="font-size:14px;font-weight:600;color:#f3f4f6;margin-bottom:4px;padding-right:34px;">${activityIndex}. ${activity.title}</div>
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
               <span style="font-size:10px;color:#9ca3af;font-family:monospace;">${activity.timeBlock}</span>
               ${rating ? `<span style="font-size:11px;color:#fbbf24;">⭐ ${rating}${totalRatings ? ` <span style="color:#6b7280;">(${totalRatings.toLocaleString()})</span>` : ''}</span>` : ''}
@@ -250,9 +250,9 @@ onUnmounted(() => { if (map) { map.remove(); map = null } })
 .leaflet-popup-close-button:hover {
   color: #f3f4f6 !important;
 }
-/* Photo popups need no padding on content wrapper */
+/* Rich photo popup gets tighter but still padded content area */
 .rich-popup .leaflet-popup-content {
-  margin: 0 !important;
+  margin: 10px !important;
 }
 
 @keyframes pulse-ring {
