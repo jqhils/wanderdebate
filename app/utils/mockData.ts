@@ -14,6 +14,7 @@ export const mockSession: Session = {
   destination: 'Paris',
   durationHours: 48,
   agents: ['flaneur', 'completionist'],
+  llmProvider: 'mistral',
   status: 'complete',
   createdAt: '2026-02-28T09:00:00Z',
 }

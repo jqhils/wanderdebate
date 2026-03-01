@@ -38,11 +38,27 @@ export const useDebateStore = defineStore('debate', () => {
   }
 
   function addMessage(msg: ChatMessage) {
+    if (messages.value.some(existing => existing.id === msg.id)) {
+      return
+    }
     messages.value.push(msg)
   }
 
   function addVersion(version: ItineraryVersion) {
-    versions.value.push(version)
+    const existingById = versions.value.findIndex(v => v.id === version.id)
+    if (existingById >= 0) {
+      versions.value[existingById] = version
+    }
+    else {
+      const existingByNumber = versions.value.findIndex(v => v.versionNumber === version.versionNumber)
+      if (existingByNumber >= 0) {
+        versions.value[existingByNumber] = version
+      }
+      else {
+        versions.value.push(version)
+      }
+    }
+    versions.value.sort((a, b) => a.versionNumber - b.versionNumber)
     // Auto-advance to latest version
     currentVersionIndex.value = versions.value.length - 1
   }

@@ -1,6 +1,13 @@
 import { z } from 'zod'
 import { useServerSupabase, rowToVersion, rowToMessage } from '../../utils/supabase'
-import { LlmResponseSchema, assignActivityIds, callAgentWithRetry } from '../../utils/llm'
+import {
+  MINIMAX_MODEL,
+  QUALITY_MODEL,
+  LlmResponseSchema,
+  assignActivityIds,
+  callAgentWithRetry,
+} from '../../utils/llm'
+import { requireAuthUser } from '../../utils/auth'
 import {
   buildProposePrompt,
   fetchUserConstraints,
@@ -16,10 +23,12 @@ const ProposeBody = z.object({
 export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, ProposeBody.parse)
   const client = useServerSupabase(event)
+  const user = await requireAuthUser(event)
   const { data: sessionRow, error: sessionError } = await client
     .from('sessions')
-    .select('destination, duration_hours')
+    .select('destination, duration_hours, llm_provider')
     .eq('id', body.sessionId)
+    .eq('user_id', user.id)
     .single()
 
   if (sessionError || !sessionRow) {
@@ -32,6 +41,7 @@ export default defineEventHandler(async (event) => {
   const userConstraints = await fetchUserConstraints(client, body.sessionId)
   const durationHours = Number(sessionRow.duration_hours)
   const numDays = Math.max(1, Math.ceil(durationHours / 24))
+  const provider = sessionRow.llm_provider === 'minimax' ? 'minimax' : 'mistral'
 
   console.log('[Propose] Starting for', body.agentId, 'version', body.versionNumber)
 
@@ -45,6 +55,12 @@ export default defineEventHandler(async (event) => {
       userConstraints,
     ),
     LlmResponseSchema,
+    {
+      tag: `propose:${body.agentId}:v${body.versionNumber}`,
+      provider,
+      model: provider === 'minimax' ? MINIMAX_MODEL : QUALITY_MODEL,
+      maxTokens: 3200,
+    },
   )
 
   const days = assignActivityIds(llmResponse.days)

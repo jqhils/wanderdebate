@@ -6,14 +6,10 @@ import { useSession } from '~/composables/useSession'
 definePageMeta({ layout: 'session' })
 
 const store = useDebateStore()
-const { startDebate, continueDebate } = useOrchestrator()
+const { continueDebate } = useOrchestrator()
 const { sendUserMessage } = useSession()
 const route = useRoute()
 const sessionId = computed(() => route.params.id as string)
-
-watch(() => store.session?.status, (status) => {
-  if (status === 'debating' && store.versions.length === 0) startDebate()
-}, { immediate: true })
 
 function handleSend(content: string) {
   if (!sessionId.value) return
@@ -24,7 +20,7 @@ const chips = ['More local food', 'Less walking', 'Add photo ops', 'Skip bars', 
 </script>
 
 <template>
-  <div class="h-full flex">
+  <div class="h-full min-h-0 flex">
     <div class="w-full lg:w-1/2 lg:border-r lg:border-gray-800 flex flex-col">
       <ChatPanel
         :messages="store.messagesForDisplay"
@@ -40,8 +36,13 @@ const chips = ['More local food', 'Less walking', 'Add photo ops', 'Skip bars', 
         </button>
       </div>
     </div>
-    <div class="hidden lg:block lg:w-1/2">
-      <ItineraryPanel :versions="store.versions" :current-index="store.currentVersionIndex" @update:current-index="store.currentVersionIndex = $event" />
+    <div class="hidden lg:flex lg:w-1/2 min-h-0">
+      <ItineraryPanel
+        class="h-full w-full"
+        :versions="store.versions"
+        :current-index="store.currentVersionIndex"
+        @update:current-index="store.setCurrentVersion($event)"
+      />
     </div>
   </div>
 </template>

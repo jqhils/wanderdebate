@@ -40,7 +40,13 @@ const OUTPUT_CONTRACT = `Respond with ONLY one \`\`\`json code block that matche
     }
   ]
 }
-Do not include any text before or after the JSON code block.`
+Do not include any text before or after the JSON code block.
+Keep commentary concise (max 140 words).
+Commentary style requirements:
+- First person voice ("I", "my plan")
+- Emotional and confrontational tone
+- Include 2-5 emojis
+- Explicitly contrast your stance vs the opposing agent philosophy`
 
 function formatConstraints(userConstraints: string[]): string {
   if (userConstraints.length === 0) {
@@ -50,6 +56,26 @@ function formatConstraints(userConstraints: string[]): string {
   return userConstraints
     .map((constraint, index) => `${index + 1}. ${constraint}`)
     .join('\n')
+}
+
+function compactVersionForPrompt(version: VersionPayload) {
+  return {
+    agentId: version.agentId,
+    versionNumber: version.versionNumber,
+    commentary: version.commentary.slice(0, 180),
+    days: version.days.map(day => ({
+      dayNumber: day.dayNumber,
+      theme: day.theme ?? null,
+      activities: day.activities.map(activity => ({
+        timeBlock: activity.timeBlock,
+        title: activity.title,
+        location: activity.location,
+        durationMinutes: activity.durationMinutes,
+        category: activity.category,
+        agentOrigin: activity.agentOrigin,
+      })),
+    })),
+  }
 }
 
 export function getSystemPrompt(agentId: AgentId, turnType: TurnType): string {
@@ -92,6 +118,9 @@ export function buildMergePrompt(
   durationHours: number,
   userConstraints: string[],
 ): string {
+  const flaneurJson = JSON.stringify(compactVersionForPrompt(flaneurVersion))
+  const completionistJson = JSON.stringify(compactVersionForPrompt(completionistVersion))
+
   return [
     'Turn type: merge.',
     `Merge two itinerary proposals for ${destination}.`,
@@ -99,10 +128,10 @@ export function buildMergePrompt(
     'IMPORTANT: Maintain geographic coherence per half-day. Do not zigzag across the city.',
     'User constraints:',
     formatConstraints(userConstraints),
-    'Flaneur proposal (JSON):',
-    `\`\`\`json\n${JSON.stringify(flaneurVersion, null, 2)}\n\`\`\``,
-    'Completionist proposal (JSON):',
-    `\`\`\`json\n${JSON.stringify(completionistVersion, null, 2)}\n\`\`\``,
+    'Flaneur proposal JSON:',
+    flaneurJson,
+    'Completionist proposal JSON:',
+    completionistJson,
     OUTPUT_CONTRACT,
   ].join('\n\n')
 }
@@ -116,21 +145,22 @@ export function buildCritiquePrompt(
 ): string {
   const agentLabel = agentId === 'flaneur' ? 'The Flâneur' : 'The Completionist'
   const otherAgent = agentId === 'flaneur' ? 'The Completionist' : 'The Flâneur'
+  const currentJson = JSON.stringify(compactVersionForPrompt(currentVersion))
 
   return [
     `Turn type: critique (${agentId}).`,
     `You are ${agentLabel}. Critique and improve the current itinerary for ${destination}.`,
     `Trip duration: ${durationHours} hours.`,
     '',
-    `MANDATORY: You must change at least 3 activities to justify your critique. Do not approve the itinerary as-is.`,
+    'MANDATORY: You must change at least 3 activities to justify your critique. Do not approve the itinerary as-is.',
     `Preserve ${otherAgent}'s activities where they genuinely serve the trip, but push for your philosophy where it matters.`,
     '',
     'Structure your commentary using: KEPT / CHANGED / DROPPED / ADDED sections.',
     '',
     'User constraints:',
     formatConstraints(userConstraints),
-    'Current itinerary (JSON):',
-    `\`\`\`json\n${JSON.stringify(currentVersion, null, 2)}\n\`\`\``,
+    'Current itinerary JSON:',
+    currentJson,
     OUTPUT_CONTRACT,
   ].join('\n\n')
 }
@@ -158,6 +188,6 @@ export async function fetchUserConstraints(
   }
 
   return (data ?? [])
-    .map(row => String(row.content ?? '').trim())
+    .map((row: { content?: unknown }) => String(row.content ?? '').trim())
     .filter(Boolean)
 }

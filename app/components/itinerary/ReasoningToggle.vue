@@ -9,7 +9,7 @@ const expanded = ref(false)
 <template>
   <div>
     <button
-      class="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+      class="flex items-center gap-1 text-xs text-[var(--wd-amber)] hover:brightness-110 transition-colors"
       @click="expanded = !expanded"
     >
       <UIcon
@@ -20,7 +20,7 @@ const expanded = ref(false)
     </button>
     <div
       v-if="expanded"
-      class="mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 leading-relaxed"
+      class="mt-2 p-2.5 rounded-lg bg-amber-900/20 border border-amber-800/40 text-xs text-amber-200 leading-relaxed"
     >
       {{ reasoning }}
     </div>

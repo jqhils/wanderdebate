@@ -14,7 +14,7 @@ function handleSend() {
 </script>
 
 <template>
-  <div class="flex gap-2 p-3 border-t border-gray-200 dark:border-gray-700">
+  <div class="flex gap-2 p-3 border-t border-[var(--wd-border)]">
     <UInput
       v-model="input"
       placeholder="Influence the debate..."

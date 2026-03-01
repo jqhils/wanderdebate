@@ -1,9 +1,11 @@
 import { useDebateStore } from '~/stores/debate'
+import { useOrchestrator } from '~/composables/useOrchestrator'
 import { useSession } from '~/composables/useSession'
 
 export function useSessionPage() {
   const route = useRoute()
   const store = useDebateStore()
+  const { startDebate } = useOrchestrator()
   const { loadSession, subscribeToRealtime, unsubscribeFromRealtime, loading, error } = useSession()
   const toast = useToast()
 
@@ -24,6 +26,11 @@ export function useSessionPage() {
       return
     }
     subscribeToRealtime(sessionId.value)
+
+    // Start generation only after initial versions are loaded from DB.
+    if (store.session?.status === 'debating' && store.versions.length === 0 && !store.isDebating) {
+      await startDebate()
+    }
   }
 
   function cleanup() {

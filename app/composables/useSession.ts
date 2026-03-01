@@ -1,5 +1,5 @@
 import { useDebateStore } from '~/stores/debate'
-import type { Session, ItineraryVersion, ChatMessage } from '~/utils/schemas'
+import type { Session, ItineraryVersion, ChatMessage, LlmProvider } from '~/utils/schemas'
 
 /**
  * Composable for session CRUD and Supabase Realtime subscriptions.
@@ -12,6 +12,28 @@ export function useSession() {
   const error = ref<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const realtimeChannel = ref<any>(null)
+
+  function isAuthError(err: unknown): boolean {
+    if (!err || typeof err !== 'object') return false
+    if ('statusCode' in err && (err as { statusCode?: number }).statusCode === 401) return true
+    if ('status' in err && (err as { status?: number }).status === 401) return true
+    return false
+  }
+
+  function extractErrorMessage(err: unknown, fallback: string): string {
+    if (err && typeof err === 'object' && 'data' in err) {
+      const data = (err as { data?: { message?: string } }).data
+      if (data?.message) {
+        return data.message
+      }
+    }
+
+    if (err instanceof Error) {
+      return err.message
+    }
+
+    return fallback
+  }
 
   /**
    * Load a session and all its data from the server.
@@ -40,7 +62,7 @@ export function useSession() {
       }
     }
     catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load session'
+      const message = extractErrorMessage(err, 'Failed to load session')
       error.value = message
       console.error('[useSession] Load error:', err)
     }
@@ -56,6 +78,7 @@ export function useSession() {
     destination: string
     durationHours: number
     agents: string[]
+    llmProvider: LlmProvider
   }): Promise<Session | null> {
     loading.value = true
     error.value = null
@@ -68,9 +91,33 @@ export function useSession() {
       return session
     }
     catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to create session'
+      const message = extractErrorMessage(err, 'Failed to create session')
       error.value = message
       console.error('[useSession] Create error:', err)
+      return null
+    }
+    finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Load all sessions owned by the authenticated user.
+   */
+  async function listSessions(): Promise<Session[] | null> {
+    loading.value = true
+    error.value = null
+
+    try {
+      const sessions = await $fetch<Session[]>('/api/sessions')
+      return sessions
+    }
+    catch (err: unknown) {
+      const message = extractErrorMessage(err, 'Failed to load sessions')
+      error.value = message
+      if (!isAuthError(err)) {
+        console.error('[useSession] List sessions error:', message)
+      }
       return null
     }
     finally {
@@ -188,6 +235,7 @@ export function useSession() {
     error: readonly(error),
     loadSession,
     createSession,
+    listSessions,
     subscribeToRealtime,
     unsubscribeFromRealtime,
     sendUserMessage,
