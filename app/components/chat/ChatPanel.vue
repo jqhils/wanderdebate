@@ -31,7 +31,7 @@ onMounted(scrollToBottom)
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col flex-1 min-h-0">
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
       <h2 class="text-lg font-semibold">Debate</h2>
       <UButton
